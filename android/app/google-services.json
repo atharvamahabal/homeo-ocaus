@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1098453998984",
+    "project_id": "homeo-ocaus",
+    "storage_bucket": "homeo-ocaus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098453998984:android:53e8ca46d1390905756e3d",
+        "android_client_info": {
+          "package_name": "com.homeoocasus.homeo_ocaus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1098453998984-3c5366tes1mohrlep86enia7ada067s4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.homeoocasus.homeo_ocaus",
+            "certificate_hash": "27ed8de487613ac494196533b97828b9bb9d3c7a"
+          }
+        },
+        {
+          "client_id": "1098453998984-imlq4ouggtdpsrkrep7ijqhm8thca9ak.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTexUCIIMd3jwVoPmxi6w8bB4gIEzVFvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1098453998984-imlq4ouggtdpsrkrep7ijqhm8thca9ak.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
