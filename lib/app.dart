@@ -13,7 +13,7 @@ class HomeoApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'HomeoClinic',
+      title: 'Homeo ओकस',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

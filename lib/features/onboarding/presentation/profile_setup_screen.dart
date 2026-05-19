@@ -21,6 +21,34 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   String _bloodGroup = 'A+';
   final _allergiesController = TextEditingController();
   final _chronicController = TextEditingController();
+  bool _isInitialLoad = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingProfile();
+  }
+
+  Future<void> _loadExistingProfile() async {
+    final user = ref.read(firebaseAuthProvider).currentUser;
+    if (user != null) {
+      final profile = await ref.read(patientRepositoryProvider).getProfile(user.uid);
+      if (profile != null && mounted) {
+        setState(() {
+          _nameController.text = profile.name;
+          _ageController.text = profile.age.toString();
+          _weightController.text = profile.weight.toString();
+          _gender = profile.gender;
+          _bloodGroup = profile.bloodGroup;
+          _allergiesController.text = profile.knownAllergies.join(', ');
+          _chronicController.text = profile.chronicConditions.join(', ');
+          _isInitialLoad = false;
+        });
+      } else {
+        setState(() => _isInitialLoad = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -34,6 +62,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitialLoad) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Complete Profile')),
       body: SingleChildScrollView(
@@ -113,32 +147,40 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState?.validate() ?? false) {
-                    final user = ref.read(firebaseAuthProvider).currentUser;
-                    if (user != null) {
-                      final profile = PatientProfile(
-                        id: user.uid,
-                        name: _nameController.text,
-                        age: int.parse(_ageController.text),
-                        gender: _gender,
-                        weight: double.parse(_weightController.text),
-                        bloodGroup: _bloodGroup,
-                        knownAllergies: _allergiesController.text
-                            .split(',')
-                            .map((e) => e.trim())
-                            .where((e) => e.isNotEmpty)
-                            .toList(),
-                        chronicConditions: _chronicController.text
-                            .split(',')
-                            .map((e) => e.trim())
-                            .where((e) => e.isNotEmpty)
-                            .toList(),
-                        email: user.email,
-                      );
-                      
-                      // Save to Firestore via repository
-                      await ref.read(patientRepositoryProvider).saveProfile(profile);
-                      
-                      if (mounted) context.go('/home');
+                    try {
+                      final user = ref.read(firebaseAuthProvider).currentUser;
+                      if (user != null) {
+                        final profile = PatientProfile(
+                          id: user.uid,
+                          name: _nameController.text,
+                          age: int.parse(_ageController.text),
+                          gender: _gender,
+                          weight: double.parse(_weightController.text),
+                          bloodGroup: _bloodGroup,
+                          knownAllergies: _allergiesController.text
+                              .split(',')
+                              .map((e) => e.trim())
+                              .where((e) => e.isNotEmpty)
+                              .toList(),
+                          chronicConditions: _chronicController.text
+                              .split(',')
+                              .map((e) => e.trim())
+                              .where((e) => e.isNotEmpty)
+                              .toList(),
+                          email: user.email,
+                        );
+                        
+                        // Save to Firestore via repository
+                        await ref.read(patientRepositoryProvider).saveProfile(profile);
+                        
+                        if (mounted) context.go('/home');
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error saving profile: $e')),
+                        );
+                      }
                     }
                   }
                 },

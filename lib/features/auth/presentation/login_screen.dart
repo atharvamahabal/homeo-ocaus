@@ -40,20 +40,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 60),
-                  Icon(
-                    Icons.health_and_safety,
-                    size: 80,
-                    color: Theme.of(context).primaryColor,
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 100,
+                    errorBuilder: (context, error, stackTrace) => Icon(
+                      Icons.home_work_rounded,
+                      size: 100,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'HomeoClinic',
+                    'Homeo ओकस',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                textAlign: TextAlign.center,
+              ),
                   const SizedBox(height: 8),
                   Text(
                     'Natural Healing at Your Fingertips',
@@ -94,7 +98,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             _passwordController.text,
                           );
                         }
-                        if (mounted) context.go('/onboarding');
+                        
+                        if (mounted) {
+                          final user = authRepo.currentUser;
+                          if (user != null) {
+                            if (user.email == 'atharva.smahabal@gmail.com') {
+                              context.go('/doctor/dashboard');
+                            } else {
+                              final profile = await ref.read(patientRepositoryProvider).getProfile(user.uid);
+                              if (mounted) {
+                                if (profile != null) {
+                                  context.go('/home');
+                                } else {
+                                  context.go('/onboarding');
+                                }
+                              }
+                            }
+                          }
+                        }
                       } catch (e) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

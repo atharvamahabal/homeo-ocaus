@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../data/patient_repository.dart';
+import '../domain/health_record.dart';
+import '../../auth/data/auth_repository.dart';
+
+class HealthRecordsScreen extends ConsumerWidget {
+  const HealthRecordsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authRepositoryProvider).currentUser;
+    if (user == null) return const Scaffold(body: Center(child: Text('Please login')));
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Health Records'),
+      ),
+      body: FutureBuilder<List<HealthRecord>>(
+        future: ref.read(patientRepositoryProvider).getHealthRecords(user.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          final records = snapshot.data ?? [];
+          if (records.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history_edu, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  const Text('No health records found yet.'),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: records.length,
+            itemBuilder: (context, index) {
+              final record = records[index];
+              final isLast = index == records.length - 1;
+
+              return IntrinsicHeight(
+                child: Row(
+                  children: [
+                    // Timeline Line and Dot
+                    Column(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        if (!isLast)
+                          Expanded(
+                            child: Container(
+                              width: 2,
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    // Record Content
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 32),
+                        child: Card(
+                          margin: EdgeInsets.zero,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      DateFormat('MMM d, y').format(record.date),
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Icon(Icons.description, size: 16, color: Colors.grey),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  record.diagnosis,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text('By ${record.doctorName}'),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Symptoms:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(record.symptoms.join(', ')),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Remedies:',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                ...record.remedies.map((remedy) => Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text('• ${remedy.name} ${remedy.potency} (${remedy.dosage})'),
+                                )),
+                                if (record.prescriptionPdfUrl != null) ...[
+                                  const SizedBox(height: 16),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      // TODO: Implement PDF download
+                                    },
+                                    icon: const Icon(Icons.download),
+                                    label: const Text('Download Prescription'),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
