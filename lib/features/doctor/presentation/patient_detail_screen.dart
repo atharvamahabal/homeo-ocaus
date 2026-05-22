@@ -151,6 +151,8 @@ class PatientDetailScreen extends ConsumerWidget {
             const Divider(height: 32),
             _infoRow('Weight', '${patient.weight} kg'),
             _infoRow('Blood Group', patient.bloodGroup),
+            _infoRow('Email', patient.email ?? 'N/A'),
+            _infoRow('Mobile', patient.phoneNumber ?? 'N/A'),
             _infoRow('Allergies', patient.knownAllergies.isEmpty ? 'None' : patient.knownAllergies.join(', ')),
           ],
         ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../data/doctor_repository.dart';
 import '../../patient/domain/appointment.dart';
 
@@ -206,7 +207,11 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
     return Card(
       color: Colors.grey[900],
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
+      child: ExpansionTile(
+        backgroundColor: Colors.transparent,
+        collapsedBackgroundColor: Colors.transparent,
+        iconColor: Colors.green,
+        collapsedIconColor: Colors.green,
         title: FutureBuilder(
           future: repo.getPatientProfile(appt.patientId),
           builder: (context, snapshot) {
@@ -216,26 +221,119 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
             );
           },
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Time: ${DateFormat('hh:mm a').format(appt.dateTime)}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            Text(
-              'Status: ${appt.status.toUpperCase()}',
-              style: TextStyle(
-                color: appt.status == 'confirmed' ? Colors.green : Colors.orange,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ],
+        subtitle: Text(
+          '${DateFormat('hh:mm a').format(appt.dateTime)} • ${appt.status.toUpperCase()}',
+          style: TextStyle(
+            color: appt.status == 'confirmed' ? Colors.green : Colors.orange,
+            fontSize: 12,
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.green),
+        children: [
+          FutureBuilder(
+            future: repo.getPatientProfile(appt.patientId),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              final patient = snapshot.data!;
+              
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildReminderButton(
+                          icon: Icons.chat,
+                          label: 'WhatsApp',
+                          color: Colors.green,
+                          onTap: () => _sendWhatsAppReminder(patient, appt),
+                        ),
+                        _buildReminderButton(
+                          icon: Icons.email,
+                          label: 'Email',
+                          color: Colors.blue,
+                          onTap: () => _sendEmailReminder(patient, appt),
+                        ),
+                      ],
+                    ),
+                    if (patient.phoneNumber == null && patient.email == null)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'No contact info available for this patient',
+                          style: TextStyle(color: Colors.red, fontSize: 10),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
+  }
+
+  Widget _buildReminderButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: color, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendWhatsAppReminder(dynamic patient, Appointment appt) async {
+    final phone = patient.phoneNumber;
+    if (phone == null || phone.isEmpty) return;
+
+    final dateStr = DateFormat('EEE, MMM d').format(appt.dateTime);
+    final timeStr = DateFormat('hh:mm a').format(appt.dateTime);
+    final message = Uri.encodeComponent(
+      'Reminder: You have an appointment with Homeo ओकस on $dateStr at $timeStr. Please be on time.'
+    );
+    
+    final url = Uri.parse('https://wa.me/$phone?text=$message');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _sendEmailReminder(dynamic patient, Appointment appt) async {
+    final email = patient.email;
+    if (email == null || email.isEmpty) return;
+
+    final dateStr = DateFormat('EEE, MMM d').format(appt.dateTime);
+    final timeStr = DateFormat('hh:mm a').format(appt.dateTime);
+    
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      query: encodeQueryParameters({
+        'subject': 'Appointment Reminder - Homeo ओकस',
+        'body': 'Dear ${patient.name},\n\nThis is a reminder for your appointment on $dateStr at $timeStr.\n\nRegards,\nHomeo ओकस Clinic'
+      }),
+    );
+
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    }
+  }
+
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 
   Widget _buildSectionHeader(BuildContext context, String title) {

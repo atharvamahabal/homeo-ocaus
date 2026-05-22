@@ -17,6 +17,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   String _gender = 'Male';
   String _bloodGroup = 'A+';
   final _allergiesController = TextEditingController();
@@ -38,6 +40,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           _nameController.text = profile.name;
           _ageController.text = profile.age.toString();
           _weightController.text = profile.weight.toString();
+          _emailController.text = profile.email ?? user.email ?? '';
+          _phoneController.text = profile.phoneNumber ?? '';
           _gender = profile.gender;
           _bloodGroup = profile.bloodGroup;
           _allergiesController.text = profile.knownAllergies.join(', ');
@@ -86,6 +90,28 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Full Name'),
                 validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email Address'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(labelText: 'Mobile Number'),
+                      keyboardType: TextInputType.phone,
+                      validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Row(
@@ -167,7 +193,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                               .map((e) => e.trim())
                               .where((e) => e.isNotEmpty)
                               .toList(),
-                          email: user.email,
+                          email: _emailController.text,
+                          phoneNumber: _phoneController.text,
                         );
                         
                         // Save to Firestore via repository
