@@ -6,14 +6,39 @@ import '../data/doctor_repository.dart';
 import '../../patient/domain/appointment.dart';
 import 'package:intl/intl.dart';
 
-class DoctorDashboardScreen extends ConsumerWidget {
+class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DoctorDashboardScreen> createState() => _DoctorDashboardScreenState();
+}
+
+class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
+  String _timeRange = 'Today'; // 'Today', 'Weekly', 'Monthly'
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authRepositoryProvider).currentUser;
     final doctorRepo = ref.watch(doctorRepositoryProvider);
-    final doctorId = 'dr_tanaya'; // Hardcoded for now as per requirements
+    final doctorId = 'dr_tanaya'; // Hardcoded ID for now
+
+    Future<List<Appointment>> getAppointments() {
+      switch (_timeRange) {
+        case 'Weekly':
+          return doctorRepo.getWeeklyAppointments(doctorId);
+        case 'Monthly':
+          return doctorRepo.getMonthlyAppointments(doctorId);
+        default:
+          return doctorRepo.getTodaysAppointments(doctorId);
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -29,21 +54,53 @@ class DoctorDashboardScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Welcome Dr Tanaya',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Welcome ${user?.displayName ?? 'Dr Tanaya'}',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user?.email ?? 'atharva.smahabal@gmail.com',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      ),
+                    ],
                   ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'atharva.smahabal@gmail.com',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _timeRange,
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        _timeRange = newValue;
+                      });
+                    }
+                  },
+                  items: <String>['Today', 'Weekly', 'Monthly']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             
@@ -57,22 +114,31 @@ class DoctorDashboardScreen extends ConsumerWidget {
               childAspectRatio: 1.5,
               children: [
                 _StatCard(
-                  title: 'Today\'s Appts',
-                  future: doctorRepo.getTodaysAppointments(doctorId).then((value) => value.length.toString()),
+                  title: '$_timeRange Appts',
+                  future: getAppointments().then((value) => value.length.toString()),
                   icon: Icons.calendar_today,
                   color: Colors.blue,
+                  onTap: () {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
+                    );
+                  },
                 ),
                 _StatCard(
                   title: 'Total Patients',
                   future: doctorRepo.getTotalPatients(doctorId).then((value) => value.toString()),
                   icon: Icons.people,
                   color: Colors.green,
+                  onTap: () => context.push('/doctor/patients'),
                 ),
                 _StatCard(
                   title: 'Pending',
-                  future: doctorRepo.getPendingConsultations(doctorId).then((value) => value.toString()),
+                  future: doctorRepo.getPendingConsultations(doctorId),
                   icon: Icons.pending_actions,
                   color: Colors.orange,
+                  onTap: () => context.push('/doctor/patients'), // For now, same screen
                 ),
                 _StatCard(
                   title: 'Monthly Earnings',
@@ -86,7 +152,10 @@ class DoctorDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             Text(
               'Quick Actions',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
             const SizedBox(height: 16),
             _QuickActionTile(
@@ -110,22 +179,51 @@ class DoctorDashboardScreen extends ConsumerWidget {
             
             const SizedBox(height: 32),
             Text(
-              'Today\'s Appointments',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              '$_timeRange\'s Appointments',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
             const SizedBox(height: 16),
             FutureBuilder<List<Appointment>>(
-              future: doctorRepo.getTodaysAppointments(doctorId),
+              future: getAppointments(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+                if (snapshot.hasError) {
+                  return Card(
+                    color: Colors.red.shade50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Error loading appointments: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  );
+                }
                 final appointments = snapshot.data ?? [];
                 if (appointments.isEmpty) {
-                  return const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Text('No appointments for today'),
+                  return InkWell(
+                    onTap: () {
+                      // Refresh or provide feedback
+                      setState(() {});
+                    },
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.blue),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('No appointments for $_timeRange. Click to refresh.'),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 }
@@ -135,17 +233,105 @@ class DoctorDashboardScreen extends ConsumerWidget {
                   itemCount: appointments.length,
                   itemBuilder: (context, index) {
                     final appt = appointments[index];
+                    final isPending = appt.status.toLowerCase() == 'pending';
+                    
                     return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(appt.patientId.substring(0, 1).toUpperCase()),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: CircleAvatar(
+                                child: Text(appt.patientId.substring(0, 1).toUpperCase()),
+                              ),
+                              title: FutureBuilder(
+                                future: doctorRepo.getPatientProfile(appt.patientId),
+                                builder: (context, profileSnapshot) {
+                                  if (profileSnapshot.hasData) {
+                                    return Text(profileSnapshot.data!.name, style: const TextStyle(fontWeight: FontWeight.bold));
+                                  }
+                                  return Text('Patient ID: ${appt.patientId}');
+                                },
+                              ),
+                              subtitle: Text('${DateFormat('MMM d').format(appt.dateTime)} at ${DateFormat('hh:mm a').format(appt.dateTime)}'),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(appt.status).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  appt.status.toUpperCase(),
+                                  style: TextStyle(
+                                    color: _getStatusColor(appt.status),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (appt.reason != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text('Reason: ${appt.reason}', style: const TextStyle(fontSize: 13)),
+                                ),
+                              ),
+                            if (isPending)
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Wrap(
+                                  alignment: WrapAlignment.end,
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () async {
+                                        await doctorRepo.updateAppointmentStatus(appt.id, 'cancelled');
+                                        setState(() {});
+                                      },
+                                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                      child: const Text('Reject'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await doctorRepo.updateAppointmentStatus(appt.id, 'confirmed');
+                                        setState(() {});
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: const Text('Approve'),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (appt.status.toLowerCase() == 'confirmed')
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      // Navigate to patient detail and open consultation form
+                                      context.push('/doctor/patients');
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Please select the patient to start consultation')),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('Start Consultation'),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                        title: Text('Patient ID: ${appt.patientId}'),
-                        subtitle: Text(DateFormat('hh:mm a').format(appt.dateTime)),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          // Navigate to patient detail/consultation
-                        },
                       ),
                     );
                   },
@@ -157,6 +343,21 @@ class DoctorDashboardScreen extends ConsumerWidget {
       ),
     );
   }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      case 'completed':
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
 class _StatCard extends StatelessWidget {
@@ -164,48 +365,60 @@ class _StatCard extends StatelessWidget {
   final Future<String> future;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _StatCard({
     required this.title,
     required this.future,
     required this.icon,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.grey[900],
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, color: color, size: 20),
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            FutureBuilder<String>(
-              future: future,
-              builder: (context, snapshot) {
-                return Text(
-                  snapshot.data ?? '...',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: color, size: 20),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.end,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white70),
+                    ),
                   ),
-                );
-              },
-            ),
-          ],
+                ],
+              ),
+              FutureBuilder<String>(
+                future: future,
+                builder: (context, snapshot) {
+                  return Text(
+                    snapshot.data ?? '...',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -228,12 +441,13 @@ class _QuickActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.grey[900],
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: Icon(icon, color: Theme.of(context).primaryColor),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
+        leading: Icon(icon, color: Colors.green),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70)),
+        trailing: const Icon(Icons.chevron_right, color: Colors.white),
         onTap: onTap,
       ),
     );

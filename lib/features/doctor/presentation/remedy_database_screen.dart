@@ -8,18 +8,7 @@ class RemedyDatabaseScreen extends StatefulWidget {
 }
 
 class _RemedyDatabaseScreenState extends State<RemedyDatabaseScreen> {
-  final List<Map<String, String>> _allRemedies = [
-    {'name': 'Arnica Montana', 'use': 'Bruising, trauma, muscle soreness'},
-    {'name': 'Arsenicum Album', 'use': 'Food poisoning, anxiety, restlessness'},
-    {'name': 'Belladonna', 'use': 'High fever, sudden onset inflammation'},
-    {'name': 'Bryonia Alba', 'use': 'Dry cough, joint pain worse by movement'},
-    {'name': 'Calcarea Carbonica', 'use': 'Fatigue, slow development, cold sensitivity'},
-    {'name': 'Gelsemium', 'use': 'Flu-like symptoms, weakness, stage fright'},
-    {'name': 'Ignatia Amara', 'use': 'Grief, emotional distress, mood swings'},
-    {'name': 'Lycopodium', 'use': 'Digestive issues, bloating, lack of confidence'},
-    {'name': 'Nux Vomica', 'use': 'Indigestion, irritability, overindulgence'},
-    {'name': 'Pulsatilla', 'use': 'Colds with thick discharge, emotional, thirstless'},
-  ];
+  final List<Map<String, String>> _allRemedies = [];
 
   List<Map<String, String>> _filteredRemedies = [];
   final TextEditingController _searchController = TextEditingController();

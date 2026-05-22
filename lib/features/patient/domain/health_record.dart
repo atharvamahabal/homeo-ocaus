@@ -8,12 +8,14 @@ class HealthRecord with _$HealthRecord {
   const factory HealthRecord({
     required String id,
     required String patientId,
-    required String doctorName,
+    @Default('Patient') String patientName,
+    @Default('Doctor') String doctorName,
     required DateTime date,
-    required String diagnosis,
-    required List<String> symptoms,
-    required List<PrescribedRemedy> remedies,
+    @Default('Consultation') String diagnosis,
+    @Default([]) List<String> symptoms,
+    @Default([]) List<PrescribedRemedy> remedies,
     String? notes,
+    DateTime? followUpDate,
     String? prescriptionPdfUrl,
     String? labReportUrl,
   }) = _HealthRecord;

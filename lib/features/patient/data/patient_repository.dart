@@ -82,21 +82,26 @@ class PatientRepository {
 
   Future<List<Appointment>> getBookedSlots(String doctorId, DateTime date) async {
     try {
-      final startOfDay = DateTime(date.year, date.month, date.day).toIso8601String();
-      final endOfDay = DateTime(date.year, date.month, date.day).add(const Duration(days: 1)).toIso8601String();
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
 
+      // Fetch all appointments for this doctor and filter in memory to avoid composite index
       final snapshot = await _firestore
           .collection('appointments')
           .where('doctorId', isEqualTo: doctorId)
-          .where('dateTime', isGreaterThanOrEqualTo: startOfDay)
-          .where('dateTime', isLessThan: endOfDay)
-          .where('status', isEqualTo: 'confirmed')
           .get();
 
-      return snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+      return snapshot.docs
+          .map((doc) => Appointment.fromJson(doc.data()))
+          .where((a) {
+            final apptDate = a.dateTime;
+            final isSameDay = apptDate.isAfter(startOfDay.subtract(const Duration(seconds: 1))) && 
+                             apptDate.isBefore(endOfDay);
+            return isSameDay && (a.status == 'confirmed' || a.status == 'pending');
+          })
+          .toList();
     } catch (e) {
       print('Error in getBookedSlots: $e');
-      // If permission denied, return empty list instead of crashing
       if (e.toString().contains('permission-denied')) {
         return [];
       }
@@ -108,30 +113,74 @@ class PatientRepository {
     final snapshot = await _firestore
         .collection('appointments')
         .where('doctorId', isEqualTo: doctorId)
-        .orderBy('dateTime', descending: true)
         .get();
     
-    return snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+    final appointments = snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+    // Sort in memory to avoid index requirement
+    appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return appointments;
   }
 
   Future<List<Appointment>> getPatientAppointments(String patientId) async {
     final snapshot = await _firestore
         .collection('appointments')
         .where('patientId', isEqualTo: patientId)
-        .orderBy('dateTime', descending: true)
         .get();
     
-    return snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+    final appointments = snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+    // Sort in memory to avoid index requirement
+    appointments.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return appointments;
   }
 
   // Health Record methods
+  Future<void> addHealthRecord(HealthRecord record) async {
+    try {
+      print('Attempting to add health record for patient: ${record.patientId}');
+      await _firestore
+          .collection('health_records')
+          .doc(record.id)
+          .set(record.toJson());
+      print('Health record added successfully');
+    } catch (e) {
+      print('CRITICAL Error in addHealthRecord: $e');
+      if (e.toString().contains('permission-denied') || e.toString().contains('Permission Denied')) {
+        throw Exception('Firestore Permission Denied: You do not have permission to write to the "health_records" collection. Please ensure your Firestore Security Rules allow authenticated users to write to this collection.');
+      }
+      rethrow;
+    }
+  }
+
   Future<List<HealthRecord>> getHealthRecords(String patientId) async {
-    final snapshot = await _firestore
-        .collection('health_records')
-        .where('patientId', isEqualTo: patientId)
-        .orderBy('date', descending: true)
-        .get();
-    
-    return snapshot.docs.map((doc) => HealthRecord.fromJson(doc.data())).toList();
+    try {
+      print('Fetching health records for patient: $patientId');
+      final snapshot = await _firestore
+          .collection('health_records')
+          .where('patientId', isEqualTo: patientId)
+          .get();
+      
+      final List<HealthRecord> records = [];
+      for (var doc in snapshot.docs) {
+        try {
+          records.add(HealthRecord.fromJson(doc.data()));
+        } catch (e) {
+          print('Error parsing health record ${doc.id}: $e');
+          // Skip records that fail to parse instead of breaking the entire list
+        }
+      }
+      
+      // Sort in memory to avoid index requirement
+      records.sort((a, b) => b.date.compareTo(a.date));
+      print('Successfully fetched ${records.length} health records');
+      return records;
+    } catch (e) {
+      print('CRITICAL Error in getHealthRecords: $e');
+      if (e.toString().contains('permission-denied') || e.toString().contains('Permission Denied')) {
+        // Return empty list or rethrow depending on desired behavior
+        // Rethrowing allows the UI to show an error message
+        throw Exception('Firestore Permission Denied: You do not have permission to read from the "health_records" collection.');
+      }
+      rethrow;
+    }
   }
 }

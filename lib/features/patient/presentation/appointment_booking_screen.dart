@@ -66,9 +66,15 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                     children: [
                       Text(
                         widget.doctor.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                      Text(widget.doctor.specialization),
+                      Text(
+                        widget.doctor.specialization,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -115,20 +121,17 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
             Wrap(
               spacing: 12,
               runSpacing: 12,
-              children: widget.doctor.timeSlots.map((time) {
-                final isBooked = _bookedSlots.contains(time);
+              children: widget.doctor.timeSlots.where((time) => !_bookedSlots.contains(time)).map((time) {
                 final isSelected = _selectedTime == time;
                 return ChoiceChip(
                   label: Text(time),
                   selected: isSelected,
-                  onSelected: isBooked ? null : (selected) {
+                  onSelected: (selected) {
                     setState(() => _selectedTime = selected ? time : null);
                   },
                   selectedColor: Theme.of(context).colorScheme.primary,
-                  disabledColor: Colors.grey[300],
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : (isBooked ? Colors.grey : Colors.black),
-                    decoration: isBooked ? TextDecoration.lineThrough : null,
+                    color: isSelected ? Colors.white : Colors.white,
                   ),
                 );
               }).toList(),
@@ -203,7 +206,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         doctorId: widget.doctor.id,
         doctorName: widget.doctor.name,
         dateTime: appointmentDateTime,
-        status: 'confirmed',
+        status: 'pending',
         type: 'clinic',
         amount: 500, // Default consultation fee
       );

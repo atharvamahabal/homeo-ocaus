@@ -20,6 +20,8 @@ class AppTheme {
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
     blendLevel: 7,
+    scaffoldBackground: Colors.black,
+    surface: Colors.black,
     subThemesData: const FlexSubThemesData(
       blendOnLevel: 10,
       blendOnColors: false,
@@ -42,6 +44,17 @@ class AppTheme {
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     useMaterial3: true,
     fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+  ).copyWith(
+    scaffoldBackgroundColor: Colors.black,
+    cardColor: Colors.grey[900],
+    textTheme: GoogleFonts.plusJakartaSansTextTheme(
+      const TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white),
+        titleLarge: TextStyle(color: Colors.white),
+        titleMedium: TextStyle(color: Colors.white),
+      ),
+    ),
   );
 
   static ThemeData dark = FlexThemeData.dark(
@@ -57,6 +70,8 @@ class AppTheme {
     ),
     surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
     blendLevel: 13,
+    scaffoldBackground: Colors.black,
+    surface: Colors.black,
     subThemesData: const FlexSubThemesData(
       blendOnLevel: 20,
       useMaterial3Typography: true,
@@ -78,5 +93,16 @@ class AppTheme {
     visualDensity: FlexColorScheme.comfortablePlatformDensity,
     useMaterial3: true,
     fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+  ).copyWith(
+    scaffoldBackgroundColor: Colors.black,
+    cardColor: Colors.grey[900],
+    textTheme: GoogleFonts.plusJakartaSansTextTheme(
+      const TextTheme(
+        bodyLarge: TextStyle(color: Colors.white),
+        bodyMedium: TextStyle(color: Colors.white),
+        titleLarge: TextStyle(color: Colors.white),
+        titleMedium: TextStyle(color: Colors.white),
+      ),
+    ),
   );
 }

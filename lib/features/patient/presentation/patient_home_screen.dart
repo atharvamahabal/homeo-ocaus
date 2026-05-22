@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/patient_repository.dart';
+import '../domain/health_record.dart';
 
 class PatientHomeScreen extends ConsumerWidget {
   const PatientHomeScreen({super.key});
@@ -76,10 +78,16 @@ class PatientHomeScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Text(
                   'Welcome, ${profile?.name ?? user?.displayName ?? user?.email ?? "Patient"}!',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 20),
-                const Text('Your Homeopathic Care is our priority.'),
+                const Text(
+                  'Your Homeopathic Care is our priority.',
+                  style: TextStyle(color: Colors.white70),
+                ),
                 const SizedBox(height: 40),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -117,11 +125,34 @@ class PatientHomeScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       _FeatureCard(
-                        title: 'Remedy Tracker',
-                        subtitle: 'Manage your dosages',
-                        icon: Icons.medication,
+                        title: 'Next Appointment',
+                        subtitle: 'View your upcoming visit',
+                        trailingWidget: FutureBuilder<List<HealthRecord>>(
+                          future: ref.read(patientRepositoryProvider).getHealthRecords(user?.uid ?? ''),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              final records = snapshot.data!;
+                              final nextFollowUp = records
+                                  .where((r) => r.followUpDate != null && r.followUpDate!.isAfter(DateTime.now()))
+                                  .map((r) => r.followUpDate!)
+                                  .toList();
+                              if (nextFollowUp.isNotEmpty) {
+                                nextFollowUp.sort((a, b) => a.compareTo(b));
+                                return Text(
+                                  'On ${DateFormat('EEE, MMM d').format(nextFollowUp.first)}',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                );
+                              }
+                            }
+                            return const Text(
+                              'No upcoming visits',
+                              style: TextStyle(color: Colors.white38, fontSize: 13),
+                            );
+                          },
+                        ),
+                        icon: Icons.event,
                         color: Colors.orange,
-                        onTap: () => context.push('/remedies'),
+                        onTap: () => context.push('/records'),
                       ),
                     ],
                   ),
@@ -164,6 +195,7 @@ class _FeatureCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final Widget? trailingWidget;
 
   const _FeatureCard({
     required this.title,
@@ -171,11 +203,13 @@ class _FeatureCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.trailingWidget,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.grey[900],
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
@@ -200,23 +234,33 @@ class _FeatureCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: TextStyle(
-                        color: Colors.grey[600],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              if (trailingWidget != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: trailingWidget!,
+                ),
+              const Icon(Icons.chevron_right, color: Colors.white70),
             ],
           ),
         ),

@@ -54,21 +54,37 @@ class DoctorListScreen extends ConsumerWidget {
                   ),
                   title: Text(
                     doctor.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 4),
-                      Text(doctor.specialization),
+                      Text(
+                        doctor.specialization,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text('${doctor.rating}'),
-                          const SizedBox(width: 8),
-                          Text('${doctor.experienceYears} years exp'),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.star, color: Colors.amber, size: 16),
+                              const SizedBox(width: 4),
+                              Text('${doctor.rating}'),
+                            ],
+                          ),
+                          Text(
+                            '${doctor.experienceYears} years exp',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
                         ],
                       ),
                     ],

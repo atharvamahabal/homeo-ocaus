@@ -13,6 +13,8 @@ import '../../features/doctor/presentation/patient_management_screen.dart';
 import '../../features/doctor/presentation/patient_detail_screen.dart';
 import '../../features/doctor/presentation/remedy_database_screen.dart';
 import '../../features/doctor/presentation/admin_panel_screen.dart';
+import '../../features/patient/presentation/consultation_detail_screen.dart';
+import '../../features/patient/domain/health_record.dart';
 import '../../features/patient/domain/doctor.dart';
 import '../../features/auth/domain/patient_profile.dart';
 
@@ -111,6 +113,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final doctor = state.extra as Doctor;
           return DoctorAppointmentsScreen(doctor: doctor);
+        },
+      ),
+      GoRoute(
+        path: '/consultation-detail',
+        name: 'consultation-detail',
+        builder: (context, state) {
+          final record = state.extra as HealthRecord;
+          return ConsultationDetailScreen(record: record);
         },
       ),
     ],

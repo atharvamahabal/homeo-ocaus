@@ -22,12 +22,14 @@ HealthRecord _$HealthRecordFromJson(Map<String, dynamic> json) {
 mixin _$HealthRecord {
   String get id => throw _privateConstructorUsedError;
   String get patientId => throw _privateConstructorUsedError;
+  String get patientName => throw _privateConstructorUsedError;
   String get doctorName => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
   String get diagnosis => throw _privateConstructorUsedError;
   List<String> get symptoms => throw _privateConstructorUsedError;
   List<PrescribedRemedy> get remedies => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  DateTime? get followUpDate => throw _privateConstructorUsedError;
   String? get prescriptionPdfUrl => throw _privateConstructorUsedError;
   String? get labReportUrl => throw _privateConstructorUsedError;
 
@@ -46,12 +48,14 @@ abstract class $HealthRecordCopyWith<$Res> {
   $Res call(
       {String id,
       String patientId,
+      String patientName,
       String doctorName,
       DateTime date,
       String diagnosis,
       List<String> symptoms,
       List<PrescribedRemedy> remedies,
       String? notes,
+      DateTime? followUpDate,
       String? prescriptionPdfUrl,
       String? labReportUrl});
 }
@@ -71,12 +75,14 @@ class _$HealthRecordCopyWithImpl<$Res, $Val extends HealthRecord>
   $Res call({
     Object? id = null,
     Object? patientId = null,
+    Object? patientName = null,
     Object? doctorName = null,
     Object? date = null,
     Object? diagnosis = null,
     Object? symptoms = null,
     Object? remedies = null,
     Object? notes = freezed,
+    Object? followUpDate = freezed,
     Object? prescriptionPdfUrl = freezed,
     Object? labReportUrl = freezed,
   }) {
@@ -88,6 +94,10 @@ class _$HealthRecordCopyWithImpl<$Res, $Val extends HealthRecord>
       patientId: null == patientId
           ? _value.patientId
           : patientId // ignore: cast_nullable_to_non_nullable
+              as String,
+      patientName: null == patientName
+          ? _value.patientName
+          : patientName // ignore: cast_nullable_to_non_nullable
               as String,
       doctorName: null == doctorName
           ? _value.doctorName
@@ -113,6 +123,10 @@ class _$HealthRecordCopyWithImpl<$Res, $Val extends HealthRecord>
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
+      followUpDate: freezed == followUpDate
+          ? _value.followUpDate
+          : followUpDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       prescriptionPdfUrl: freezed == prescriptionPdfUrl
           ? _value.prescriptionPdfUrl
           : prescriptionPdfUrl // ignore: cast_nullable_to_non_nullable
@@ -136,12 +150,14 @@ abstract class _$$HealthRecordImplCopyWith<$Res>
   $Res call(
       {String id,
       String patientId,
+      String patientName,
       String doctorName,
       DateTime date,
       String diagnosis,
       List<String> symptoms,
       List<PrescribedRemedy> remedies,
       String? notes,
+      DateTime? followUpDate,
       String? prescriptionPdfUrl,
       String? labReportUrl});
 }
@@ -159,12 +175,14 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? patientId = null,
+    Object? patientName = null,
     Object? doctorName = null,
     Object? date = null,
     Object? diagnosis = null,
     Object? symptoms = null,
     Object? remedies = null,
     Object? notes = freezed,
+    Object? followUpDate = freezed,
     Object? prescriptionPdfUrl = freezed,
     Object? labReportUrl = freezed,
   }) {
@@ -176,6 +194,10 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
       patientId: null == patientId
           ? _value.patientId
           : patientId // ignore: cast_nullable_to_non_nullable
+              as String,
+      patientName: null == patientName
+          ? _value.patientName
+          : patientName // ignore: cast_nullable_to_non_nullable
               as String,
       doctorName: null == doctorName
           ? _value.doctorName
@@ -201,6 +223,10 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
+      followUpDate: freezed == followUpDate
+          ? _value.followUpDate
+          : followUpDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       prescriptionPdfUrl: freezed == prescriptionPdfUrl
           ? _value.prescriptionPdfUrl
           : prescriptionPdfUrl // ignore: cast_nullable_to_non_nullable
@@ -219,12 +245,14 @@ class _$HealthRecordImpl implements _HealthRecord {
   const _$HealthRecordImpl(
       {required this.id,
       required this.patientId,
-      required this.doctorName,
+      this.patientName = 'Patient',
+      this.doctorName = 'Doctor',
       required this.date,
-      required this.diagnosis,
-      required final List<String> symptoms,
-      required final List<PrescribedRemedy> remedies,
+      this.diagnosis = 'Consultation',
+      final List<String> symptoms = const [],
+      final List<PrescribedRemedy> remedies = const [],
       this.notes,
+      this.followUpDate,
       this.prescriptionPdfUrl,
       this.labReportUrl})
       : _symptoms = symptoms,
@@ -238,13 +266,19 @@ class _$HealthRecordImpl implements _HealthRecord {
   @override
   final String patientId;
   @override
+  @JsonKey()
+  final String patientName;
+  @override
+  @JsonKey()
   final String doctorName;
   @override
   final DateTime date;
   @override
+  @JsonKey()
   final String diagnosis;
   final List<String> _symptoms;
   @override
+  @JsonKey()
   List<String> get symptoms {
     if (_symptoms is EqualUnmodifiableListView) return _symptoms;
     // ignore: implicit_dynamic_type
@@ -253,6 +287,7 @@ class _$HealthRecordImpl implements _HealthRecord {
 
   final List<PrescribedRemedy> _remedies;
   @override
+  @JsonKey()
   List<PrescribedRemedy> get remedies {
     if (_remedies is EqualUnmodifiableListView) return _remedies;
     // ignore: implicit_dynamic_type
@@ -262,13 +297,15 @@ class _$HealthRecordImpl implements _HealthRecord {
   @override
   final String? notes;
   @override
+  final DateTime? followUpDate;
+  @override
   final String? prescriptionPdfUrl;
   @override
   final String? labReportUrl;
 
   @override
   String toString() {
-    return 'HealthRecord(id: $id, patientId: $patientId, doctorName: $doctorName, date: $date, diagnosis: $diagnosis, symptoms: $symptoms, remedies: $remedies, notes: $notes, prescriptionPdfUrl: $prescriptionPdfUrl, labReportUrl: $labReportUrl)';
+    return 'HealthRecord(id: $id, patientId: $patientId, patientName: $patientName, doctorName: $doctorName, date: $date, diagnosis: $diagnosis, symptoms: $symptoms, remedies: $remedies, notes: $notes, followUpDate: $followUpDate, prescriptionPdfUrl: $prescriptionPdfUrl, labReportUrl: $labReportUrl)';
   }
 
   @override
@@ -279,6 +316,8 @@ class _$HealthRecordImpl implements _HealthRecord {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.patientId, patientId) ||
                 other.patientId == patientId) &&
+            (identical(other.patientName, patientName) ||
+                other.patientName == patientName) &&
             (identical(other.doctorName, doctorName) ||
                 other.doctorName == doctorName) &&
             (identical(other.date, date) || other.date == date) &&
@@ -287,6 +326,8 @@ class _$HealthRecordImpl implements _HealthRecord {
             const DeepCollectionEquality().equals(other._symptoms, _symptoms) &&
             const DeepCollectionEquality().equals(other._remedies, _remedies) &&
             (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.followUpDate, followUpDate) ||
+                other.followUpDate == followUpDate) &&
             (identical(other.prescriptionPdfUrl, prescriptionPdfUrl) ||
                 other.prescriptionPdfUrl == prescriptionPdfUrl) &&
             (identical(other.labReportUrl, labReportUrl) ||
@@ -299,12 +340,14 @@ class _$HealthRecordImpl implements _HealthRecord {
       runtimeType,
       id,
       patientId,
+      patientName,
       doctorName,
       date,
       diagnosis,
       const DeepCollectionEquality().hash(_symptoms),
       const DeepCollectionEquality().hash(_remedies),
       notes,
+      followUpDate,
       prescriptionPdfUrl,
       labReportUrl);
 
@@ -326,12 +369,14 @@ abstract class _HealthRecord implements HealthRecord {
   const factory _HealthRecord(
       {required final String id,
       required final String patientId,
-      required final String doctorName,
+      final String patientName,
+      final String doctorName,
       required final DateTime date,
-      required final String diagnosis,
-      required final List<String> symptoms,
-      required final List<PrescribedRemedy> remedies,
+      final String diagnosis,
+      final List<String> symptoms,
+      final List<PrescribedRemedy> remedies,
       final String? notes,
+      final DateTime? followUpDate,
       final String? prescriptionPdfUrl,
       final String? labReportUrl}) = _$HealthRecordImpl;
 
@@ -342,6 +387,8 @@ abstract class _HealthRecord implements HealthRecord {
   String get id;
   @override
   String get patientId;
+  @override
+  String get patientName;
   @override
   String get doctorName;
   @override
@@ -354,6 +401,8 @@ abstract class _HealthRecord implements HealthRecord {
   List<PrescribedRemedy> get remedies;
   @override
   String? get notes;
+  @override
+  DateTime? get followUpDate;
   @override
   String? get prescriptionPdfUrl;
   @override
