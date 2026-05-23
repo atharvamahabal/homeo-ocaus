@@ -39,11 +39,8 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
     final doctorId = 'dr_tanaya';
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Admin Panel', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Admin Panel', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: FutureBuilder<List<Appointment>>(
         future: doctorRepo.getMonthlyAppointments(doctorId),
@@ -72,7 +69,6 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
                 _buildSectionHeader(context, 'Appointment Calendar'),
                 const SizedBox(height: 16),
                 Card(
-                  color: Colors.grey[900],
                   child: TableCalendar(
                     firstDay: DateTime.utc(2024, 1, 1),
                     lastDay: DateTime.utc(2026, 12, 31),
@@ -98,48 +94,38 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
                       markerDecoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                       selectedDecoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
                       todayDecoration: BoxDecoration(color: Colors.green.withOpacity(0.3), shape: BoxShape.circle),
-                      defaultTextStyle: const TextStyle(color: Colors.white),
-                      weekendTextStyle: const TextStyle(color: Colors.white70),
                     ),
                     calendarBuilders: CalendarBuilders(
                       markerBuilder: (context, day, events) {
                         if (events.isEmpty) return const SizedBox.shrink();
                         
-                        final appointments = events as List<Appointment>;
-                        final count = appointments.length;
+                        final count = events.length;
                         
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: List.generate(count, (index) {
-                            // Calculate position on the circle border using trigonometry
-                            // Subtract pi/2 to start from the top (12 o'clock position)
-                            final double angle = (2 * math.pi * index) / count - (math.pi / 2);
-                            final double radius = 18.0; // Standard radius for TableCalendar day circle
-                            
-                            return Transform.translate(
-                              offset: Offset(
-                                radius * math.cos(angle),
-                                radius * math.sin(angle),
+                        return Positioned(
+                          right: 1,
+                          top: 1,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              '$count',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
-                              child: Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            );
-                          }),
+                            ),
+                          ),
                         );
                       },
                     ),
                     headerStyle: const HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
-                      titleTextStyle: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold),
-                      leftChevronIcon: Icon(Icons.chevron_left, color: Colors.green),
-                      rightChevronIcon: Icon(Icons.chevron_right, color: Colors.green),
+                      titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -205,28 +191,38 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
 
   Widget _buildAppointmentDetailCard(BuildContext context, Appointment appt, DoctorRepository repo) {
     return Card(
-      color: Colors.grey[900],
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
-        backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        iconColor: Colors.green,
-        collapsedIconColor: Colors.green,
         title: FutureBuilder(
           future: repo.getPatientProfile(appt.patientId),
           builder: (context, snapshot) {
             return Text(
               snapshot.data?.name ?? 'Patient: ${appt.patientId}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             );
           },
         ),
-        subtitle: Text(
-          '${DateFormat('hh:mm a').format(appt.dateTime)} • ${appt.status.toUpperCase()}',
-          style: TextStyle(
-            color: appt.status == 'confirmed' ? Colors.green : Colors.orange,
-            fontSize: 12,
-          ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${DateFormat('hh:mm a').format(appt.dateTime)} • ${appt.status.toUpperCase()}',
+              style: TextStyle(
+                color: appt.status == 'confirmed' ? Colors.green[700] : Colors.orange[700],
+                fontSize: 12,
+              ),
+            ),
+            if (appt.healthConcern != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  'Concern: ${appt.healthConcern}',
+                  style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
         ),
         children: [
           FutureBuilder(
@@ -349,16 +345,15 @@ class _AdminPanelScreenState extends ConsumerState<AdminPanelScreen> {
 
   Widget _buildRevenueChart(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Padding(
-        padding: EdgeInsets.all(16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: SizedBox(
           height: 200,
           child: Center(
             child: Text(
               'No data available',
-              style: TextStyle(color: Colors.white38),
+              style: TextStyle(color: Theme.of(context).primaryColor.withOpacity(0.5)),
             ),
           ),
         ),
@@ -389,7 +384,6 @@ class _AnalyticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -398,11 +392,11 @@ class _AnalyticsCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(title, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+            Text(title, style: const TextStyle(fontSize: 14)),
             const SizedBox(height: 4),
             Text(
               value,
-              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -427,12 +421,11 @@ class _AdminActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: Icon(icon, color: Colors.green),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
         onTap: onTap,
       ),
     );

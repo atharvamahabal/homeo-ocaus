@@ -34,7 +34,8 @@ class DoctorListScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final doctor = doctors[index];
               final user = ref.watch(authRepositoryProvider).currentUser;
-              final isDoctor = user?.email == 'atharva.smahabal@gmail.com';
+              final adminEmails = ['atharva.smahabal@gmail.com', 'homeo.ocus@gmail.com'];
+              final isDoctor = adminEmails.contains(user?.email);
 
               return Card(
                 elevation: 2,

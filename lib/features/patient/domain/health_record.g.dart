@@ -14,6 +14,7 @@ _$HealthRecordImpl _$$HealthRecordImplFromJson(Map<String, dynamic> json) =>
       doctorName: json['doctorName'] as String? ?? 'Doctor',
       date: DateTime.parse(json['date'] as String),
       diagnosis: json['diagnosis'] as String? ?? 'Consultation',
+      healthConcern: json['healthConcern'] as String?,
       symptoms: (json['symptoms'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -38,8 +39,9 @@ Map<String, dynamic> _$$HealthRecordImplToJson(_$HealthRecordImpl instance) =>
       'doctorName': instance.doctorName,
       'date': instance.date.toIso8601String(),
       'diagnosis': instance.diagnosis,
+      'healthConcern': instance.healthConcern,
       'symptoms': instance.symptoms,
-      'remedies': instance.remedies,
+      'remedies': instance.remedies.map((e) => e.toJson()).toList(),
       'notes': instance.notes,
       'followUpDate': instance.followUpDate?.toIso8601String(),
       'prescriptionPdfUrl': instance.prescriptionPdfUrl,
@@ -50,10 +52,10 @@ _$PrescribedRemedyImpl _$$PrescribedRemedyImplFromJson(
         Map<String, dynamic> json) =>
     _$PrescribedRemedyImpl(
       name: json['name'] as String,
-      potency: json['potency'] as String,
-      dosage: json['dosage'] as String,
-      frequency: json['frequency'] as String,
-      duration: json['duration'] as String,
+      potency: json['potency'] as String? ?? '',
+      dosage: json['dosage'] as String? ?? '',
+      frequency: json['frequency'] as String? ?? 'As directed',
+      duration: json['duration'] as String? ?? 'Until finished',
       instructions: json['instructions'] as String?,
     );
 

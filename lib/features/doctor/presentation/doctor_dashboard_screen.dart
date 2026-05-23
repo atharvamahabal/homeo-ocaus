@@ -75,7 +75,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        user?.email ?? 'atharva.smahabal@gmail.com',
+                        user?.email ?? 'homeo.ocus@gmail.com',
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                       ),
@@ -243,6 +243,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                           children: [
                             ListTile(
                               leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
                                 child: Text(appt.patientId.substring(0, 1).toUpperCase()),
                               ),
                               title: FutureBuilder(
@@ -254,7 +255,9 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                                   return Text('Patient ID: ${appt.patientId}');
                                 },
                               ),
-                              subtitle: Text('${DateFormat('MMM d').format(appt.dateTime)} at ${DateFormat('hh:mm a').format(appt.dateTime)}'),
+                              subtitle: Text(
+                                '${DateFormat('MMM d').format(appt.dateTime)} at ${DateFormat('hh:mm a').format(appt.dateTime)}',
+                              ),
                               trailing: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -271,12 +274,21 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                                 ),
                               ),
                             ),
-                            if (appt.reason != null)
+                            if (appt.reason != null || appt.healthConcern != null)
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                                 child: Align(
                                   alignment: Alignment.centerLeft,
-                                  child: Text('Reason: ${appt.reason}', style: const TextStyle(fontSize: 13)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (appt.healthConcern != null)
+                                        Text('Health Concern: ${appt.healthConcern}', 
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.green)),
+                                      if (appt.reason != null)
+                                        Text('Reason: ${appt.reason}', style: const TextStyle(fontSize: 13, color: Colors.white70)),
+                                    ],
+                                  ),
                                 ),
                               ),
                             if (isPending)
@@ -315,12 +327,16 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                                 child: Align(
                                   alignment: Alignment.centerRight,
                                   child: ElevatedButton(
-                                    onPressed: () {
-                                      // Navigate to patient detail and open consultation form
-                                      context.push('/doctor/patients');
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Please select the patient to start consultation')),
-                                      );
+                                    onPressed: () async {
+                                      // Get patient profile first
+                                      final patient = await doctorRepo.getPatientProfile(appt.patientId);
+                                      if (patient != null && context.mounted) {
+                                        context.push('/doctor/patient-details', extra: patient);
+                                      } else if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Error: Could not load patient profile')),
+                                        );
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
@@ -378,7 +394,6 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       elevation: 2,
       child: InkWell(
         onTap: onTap,
@@ -399,7 +414,7 @@ class _StatCard extends StatelessWidget {
                       title,
                       textAlign: TextAlign.end,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.white70),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -441,13 +456,12 @@ class _QuickActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: Icon(icon, color: Colors.green),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.white),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
     );

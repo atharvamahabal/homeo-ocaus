@@ -17,8 +17,10 @@ class AppointmentBookingScreen extends ConsumerStatefulWidget {
 }
 
 class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScreen> {
+  final _formKey = GlobalKey<FormState>();
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   String? _selectedTime;
+  final _healthConcernController = TextEditingController();
   bool _isLoading = false;
   List<String> _bookedSlots = [];
 
@@ -26,6 +28,12 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
   void initState() {
     super.initState();
     _fetchBookedSlots();
+  }
+
+  @override
+  void dispose() {
+    _healthConcernController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchBookedSlots() async {
@@ -43,11 +51,13 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
       appBar: AppBar(
         title: Text('Book with ${widget.doctor.name}'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Doctor Info Header
             Row(
               children: [
@@ -130,11 +140,41 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                     setState(() => _selectedTime = selected ? time : null);
                   },
                   selectedColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  side: BorderSide(
+                    color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                  ),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white,
+                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 32),
+
+            // Health Concern Input
+            Text(
+              'Health Concern *',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _healthConcernController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Describe your health concern or symptoms...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please describe your health concern';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 48),
 
@@ -154,10 +194,15 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _bookAppointment() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
     setState(() => _isLoading = true);
     try {
       final user = ref.read(authRepositoryProvider).currentUser;
@@ -176,6 +221,30 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
                 TextButton(
                   onPressed: () => context.go('/onboarding'),
                   child: const Text('Complete Profile'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check for existing pending appointments
+      final existingAppointments = await ref.read(patientRepositoryProvider).getPatientAppointments(user.uid);
+      final hasPending = existingAppointments.any((a) => a.status == 'pending');
+      
+      if (hasPending) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Booking Restricted'),
+              content: const Text('You already have a pending appointment. Please wait for it to be approved before booking another one.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
                 ),
               ],
             ),
@@ -208,6 +277,7 @@ class _AppointmentBookingScreenState extends ConsumerState<AppointmentBookingScr
         dateTime: appointmentDateTime,
         status: 'pending',
         type: 'clinic',
+        healthConcern: _healthConcernController.text.trim().isEmpty ? null : _healthConcernController.text.trim(),
         amount: 500, // Default consultation fee
       );
 

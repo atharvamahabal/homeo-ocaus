@@ -14,6 +14,7 @@ class Appointment with _$Appointment {
     required String status, // 'pending', 'confirmed', 'cancelled', 'completed'
     required String type, // 'video', 'clinic'
     String? reason,
+    String? healthConcern,
     String? notes,
     @Default(false) bool isPaid,
     double? amount,

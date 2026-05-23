@@ -147,10 +147,13 @@ class HealthRecordsScreen extends ConsumerWidget {
                                   'Remedies:',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
-                                ...record.remedies.map((remedy) => Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text('• ${remedy.name} ${remedy.potency} (${remedy.dosage})'),
-                                )),
+                                if (record.remedies.isEmpty)
+                                  const Text('No remedies prescribed', style: TextStyle(color: Colors.grey, fontSize: 13))
+                                else
+                                  ...record.remedies.map((remedy) => Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text('• ${remedy.name} ${remedy.potency} (${remedy.dosage})'),
+                                  )),
                                 if (record.prescriptionPdfUrl != null) ...[
                                   const SizedBox(height: 16),
                                   OutlinedButton.icon(

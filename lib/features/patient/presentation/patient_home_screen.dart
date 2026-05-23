@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/patient_repository.dart';
 import '../domain/health_record.dart';
+import '../domain/appointment.dart';
 
 class PatientHomeScreen extends ConsumerWidget {
   const PatientHomeScreen({super.key});
@@ -78,15 +79,12 @@ class PatientHomeScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Text(
                   'Welcome, ${profile?.name ?? user?.displayName ?? user?.email ?? "Patient"}!',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Your Homeopathic Care is our priority.',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(color: Theme.of(context).primaryColor.withOpacity(0.7)),
                 ),
                 const SizedBox(height: 40),
                 Padding(
@@ -123,36 +121,53 @@ class PatientHomeScreen extends ConsumerWidget {
                         color: Colors.green,
                         onTap: () => context.push('/records'),
                       ),
-                      const SizedBox(height: 16),
-                      _FeatureCard(
-                        title: 'Next Appointment',
-                        subtitle: 'View your upcoming visit',
-                        trailingWidget: FutureBuilder<List<HealthRecord>>(
-                          future: ref.read(patientRepositoryProvider).getHealthRecords(user?.uid ?? ''),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              final records = snapshot.data!;
-                              final nextFollowUp = records
-                                  .where((r) => r.followUpDate != null && r.followUpDate!.isAfter(DateTime.now()))
-                                  .map((r) => r.followUpDate!)
-                                  .toList();
-                              if (nextFollowUp.isNotEmpty) {
-                                nextFollowUp.sort((a, b) => a.compareTo(b));
-                                return Text(
-                                  'On ${DateFormat('EEE, MMM d').format(nextFollowUp.first)}',
+                      FutureBuilder<List<dynamic>>(
+                        future: Future.wait([
+                          ref.read(patientRepositoryProvider).getHealthRecords(user?.uid ?? ''),
+                          ref.read(patientRepositoryProvider).getPatientAppointments(user?.uid ?? ''),
+                        ]),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox.shrink();
+                          
+                          final now = DateTime.now();
+                          final records = snapshot.data![0] as List<HealthRecord>;
+                          final appointments = snapshot.data![1] as List<Appointment>;
+                          
+                          final dates = [
+                            ...records.where((r) => r.followUpDate != null).map((r) => r.followUpDate!),
+                            ...appointments.where((a) => a.status != 'cancelled').map((a) => a.dateTime),
+                          ];
+                          
+                          // Filter: Future only, and (This Month OR Weekly)
+                          final filteredDates = dates.where((d) {
+                            final isFuture = d.isAfter(now);
+                            final isThisMonth = d.month == now.month && d.year == now.year;
+                            final isWeekly = d.isBefore(now.add(const Duration(days: 7)));
+                            return isFuture && (isThisMonth || isWeekly);
+                          }).toList();
+                          
+                          if (filteredDates.isEmpty) return const SizedBox.shrink();
+                          
+                          filteredDates.sort();
+                          final nextDate = filteredDates.first;
+
+                          return Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              _FeatureCard(
+                                title: 'Next Appointment',
+                                subtitle: 'View your upcoming visit',
+                                trailingWidget: Text(
+                                  'On ${DateFormat('EEE, MMM d').format(nextDate)}',
                                   style: const TextStyle(color: Colors.white70, fontSize: 13),
-                                );
-                              }
-                            }
-                            return const Text(
-                              'No upcoming visits',
-                              style: TextStyle(color: Colors.white38, fontSize: 13),
-                            );
-                          },
-                        ),
-                        icon: Icons.event,
-                        color: Colors.orange,
-                        onTap: () => context.push('/records'),
+                                ),
+                                icon: Icons.event,
+                                color: Colors.orange,
+                                onTap: () => context.push('/records'),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -209,7 +224,6 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.grey[900],
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
@@ -239,7 +253,6 @@ class _FeatureCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -248,7 +261,6 @@ class _FeatureCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white70,
                         fontSize: 14,
                       ),
                     ),
@@ -260,7 +272,7 @@ class _FeatureCard extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8.0),
                   child: trailingWidget!,
                 ),
-              const Icon(Icons.chevron_right, color: Colors.white70),
+              const Icon(Icons.chevron_right),
             ],
           ),
         ),

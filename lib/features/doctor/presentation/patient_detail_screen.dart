@@ -81,7 +81,10 @@ class PatientDetailScreen extends ConsumerWidget {
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ExpansionTile(
-                        title: Text(DateFormat('MMM d, y • HH:mm:ss').format(record.date)),
+                        title: Text(
+                          DateFormat('MMM d, y • HH:mm:ss').format(record.date),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text(record.diagnosis),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -103,6 +106,11 @@ class PatientDetailScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                if (record.healthConcern != null) ...[
+                                  const Text('Health Concern:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(record.healthConcern!),
+                                  const SizedBox(height: 8),
+                                ],
                                 const Text('Symptoms:', style: TextStyle(fontWeight: FontWeight.bold)),
                                 Text(record.symptoms.join(', ')),
                                 const SizedBox(height: 8),
@@ -137,7 +145,11 @@ class PatientDetailScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const CircleAvatar(radius: 30, child: Icon(Icons.person, size: 30)),
+                CircleAvatar(
+                  radius: 30, 
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                  child: Icon(Icons.person, size: 30, color: Theme.of(context).primaryColor)
+                ),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,11 +227,14 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
   final _objectiveController = TextEditingController();
   final _assessmentController = TextEditingController();
   final _planController = TextEditingController();
+  
+  Appointment? _latestAppointment;
+  bool _isLoadingAppointment = true;
 
   DateTime? _followUpDate;
   TimeOfDay? _followUpTime;
 
-  final List<PrescribedRemedy> _remedies = [];
+  List<PrescribedRemedy> _remedies = [];
   final _remedyNameController = TextEditingController();
   final _potencyController = TextEditingController();
   final _dosageController = TextEditingController();
@@ -230,6 +245,7 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
   @override
   void initState() {
     super.initState();
+    _fetchLatestAppointment();
     if (widget.recordToEdit != null) {
       _subjectiveController.text = widget.recordToEdit!.symptoms.join(', ');
       _assessmentController.text = widget.recordToEdit!.diagnosis;
@@ -255,17 +271,40 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
     }
   }
 
+  Future<void> _fetchLatestAppointment() async {
+    try {
+      final appointments = await ref.read(patientRepositoryProvider).getPatientAppointments(widget.patient.id);
+      if (appointments.isNotEmpty && mounted) {
+        setState(() {
+          // Get the most recent confirmed or pending appointment that has a health concern
+          _latestAppointment = appointments.firstWhere(
+            (a) => (a.status == 'confirmed' || a.status == 'pending') && a.healthConcern != null,
+            orElse: () => appointments.first,
+          );
+          _isLoadingAppointment = false;
+        });
+      } else if (mounted) {
+        setState(() => _isLoadingAppointment = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingAppointment = false);
+    }
+  }
+
   void _addRemedy() {
-    if (_remedyNameController.text.isNotEmpty) {
+    final name = _remedyNameController.text.trim();
+    if (name.isNotEmpty) {
+      final newRemedy = PrescribedRemedy(
+        name: name,
+        potency: _potencyController.text.trim(),
+        dosage: _dosageController.text.trim(),
+        frequency: _frequencyController.text.trim().isEmpty ? 'As directed' : _frequencyController.text.trim(),
+        duration: _durationController.text.trim().isEmpty ? 'Until finished' : _durationController.text.trim(),
+        instructions: _instructionsController.text.trim(),
+      );
+
       setState(() {
-        _remedies.add(PrescribedRemedy(
-          name: _remedyNameController.text,
-          potency: _potencyController.text,
-          dosage: _dosageController.text,
-          frequency: _frequencyController.text.isEmpty ? 'As directed' : _frequencyController.text,
-          duration: _durationController.text.isEmpty ? 'Until finished' : _durationController.text,
-          instructions: _instructionsController.text,
-        ));
+        _remedies = [..._remedies, newRemedy];
         _remedyNameController.clear();
         _potencyController.clear();
         _dosageController.clear();
@@ -273,10 +312,31 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
         _durationController.clear();
         _instructionsController.clear();
       });
+
+      // Provide feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Remedy added to prescription'),
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter at least a remedy name'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
   Future<void> _saveConsultation() async {
+    // Automatically add any pending remedy in the input fields if the name is filled
+    if (_remedyNameController.text.isNotEmpty) {
+      _addRemedy();
+    }
+
     // Check if any field has been filled (Subjective, Objective, Assessment, Plan, or Remedies)
     final bool hasData = _subjectiveController.text.isNotEmpty ||
         _objectiveController.text.isNotEmpty ||
@@ -313,6 +373,7 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
         symptoms: _subjectiveController.text.isEmpty 
             ? [] 
             : _subjectiveController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        healthConcern: _latestAppointment?.healthConcern,
         remedies: _remedies,
         notes: 'Objective: ${_objectiveController.text}\nPlan: ${_planController.text}',
         followUpDate: followUpDateTime,
@@ -413,6 +474,37 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
                   ),
                 ],
               ),
+              if (_latestAppointment?.healthConcern != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.health_and_safety, color: Colors.green, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Patient\'s Health Concern:',
+                            style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _latestAppointment!.healthConcern!,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               _buildSOAPField('Subjective', 'Symptoms (comma separated)...', _subjectiveController),
               _buildSOAPField('Objective', 'Vital signs and observations...', _objectiveController),
@@ -422,76 +514,63 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
               // Follow-up Selection
             _buildSectionTitleInForm(context, 'Next Follow-up', Icons.event_repeat),
             Card(
-              color: Colors.grey[900],
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(color: Colors.grey[700]!),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                leading: const Icon(Icons.calendar_month, color: Colors.green),
-                title: Text(
-                  _followUpDate == null 
-                    ? 'Set Follow-up Date & Time' 
-                    : '${DateFormat('EEE, MMM d, y').format(_followUpDate!)} at ${_followUpTime?.format(context) ?? ""}',
-                  style: const TextStyle(color: Colors.white),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.1)),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                trailing: _followUpDate != null 
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, size: 20, color: Colors.white),
-                      onPressed: () => setState(() {
-                        _followUpDate = null;
-                        _followUpTime = null;
-                      }),
-                    )
-                  : const Icon(Icons.add, size: 20, color: Colors.white),
-                onTap: () async {
-                  // Get already booked slots for the chosen date to show warning
-                  final bookedSlots = await ref.read(patientRepositoryProvider).getBookedSlots('dr_tanaya', _followUpDate ?? DateTime.now());
-                  
-                  if (!mounted) return;
+                child: ListTile(
+                  leading: Icon(Icons.calendar_month, color: Theme.of(context).primaryColor),
+                  title: Text(
+                    _followUpDate == null 
+                      ? 'Set Follow-up Date & Time' 
+                      : '${DateFormat('EEE, MMM d, y').format(_followUpDate!)} at ${_followUpTime?.format(context) ?? ""}',
+                  ),
+                  trailing: _followUpDate != null 
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () => setState(() {
+                          _followUpDate = null;
+                          _followUpTime = null;
+                        }),
+                      )
+                    : const Icon(Icons.add, size: 20),
+                  onTap: () async {
+                    // Get already booked slots for the chosen date to show warning
+                    final bookedSlots = await ref.read(patientRepositoryProvider).getBookedSlots('dr_tanaya', _followUpDate ?? DateTime.now());
+                    
+                    if (!mounted) return;
 
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: _followUpDate ?? DateTime.now().add(const Duration(days: 7)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 90)),
-                    builder: (context, child) {
-                      return Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.dark(
-                            primary: Colors.green,
-                            onPrimary: Colors.white,
-                            surface: Colors.black,
-                            onSurface: Colors.white,
-                          ),
-                          dialogBackgroundColor: Colors.grey[900],
-                        ),
-                        child: child!,
-                      );
-                    },
-                  );
-                  if (date != null && mounted) {
-                    final time = await showTimePicker(
+                    final date = await showDatePicker(
                       context: context,
-                      initialTime: _followUpTime ?? const TimeOfDay(hour: 10, minute: 0),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.dark(
-                              primary: Colors.green,
-                              onPrimary: Colors.white,
-                              surface: Colors.black,
-                              onSurface: Colors.white,
-                            ),
-                            dialogBackgroundColor: Colors.grey[900],
-                          ),
-                          child: child!,
-                        );
-                      },
+                      initialDate: _followUpDate ?? DateTime.now().add(const Duration(days: 7)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 90)),
                     );
-                    if (time != null) {
+                    if (date != null && mounted) {
+                      final time = await showTimePicker(
+                        context: context,
+                        initialTime: _followUpTime ?? const TimeOfDay(hour: 10, minute: 0),
+                      );
+                      if (time != null) {
                       final timeStr = DateFormat('hh:mm a').format(DateTime(2000, 1, 1, time.hour, time.minute));
+                      
+                      // Check clinic timings: 10am-1pm and 4pm-8pm
+                      final double timeDouble = time.hour + (time.minute / 60.0);
+                      final bool isWithinMorning = timeDouble >= 10.0 && timeDouble <= 13.0;
+                      final bool isWithinEvening = timeDouble >= 16.0 && timeDouble <= 20.0;
+                      
+                      if (!isWithinMorning && !isWithinEvening) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Warning: Selected time is outside clinic hours (10am-1pm, 4pm-8pm)'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      }
+
                       if (bookedSlots.contains(timeStr)) {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -515,26 +594,24 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
             const Divider(height: 48, color: Colors.grey),
               const Text(
                 'Digital Prescription',
-                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               const SizedBox(height: 16),
               ..._remedies.map((r) => Card(
-                    color: Colors.grey[900],
                     child: ListTile(
-                      title: Text('${r.name} ${r.potency}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      subtitle: Text('${r.dosage} | ${r.frequency} | ${r.duration}\n${r.instructions ?? ''}', style: const TextStyle(color: Colors.white70)),
+                      title: Text('${r.name} ${r.potency}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('${r.dosage} | ${r.frequency} | ${r.duration}\n${r.instructions ?? ''}'),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => setState(() => _remedies.remove(r)),
+                        onPressed: () => setState(() => _remedies = _remedies.where((remedy) => remedy != r).toList()),
                       ),
                     ),
                   )),
               const SizedBox(height: 16),
               Card(
-                color: Colors.grey[900],
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  side: BorderSide(color: Colors.grey[700]!),
+                  side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.1)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
@@ -570,8 +647,8 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
                         icon: const Icon(Icons.add),
                         label: const Text('Add Remedy'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green.withOpacity(0.1),
-                          foregroundColor: Colors.green,
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          foregroundColor: Theme.of(context).primaryColor,
                           elevation: 0,
                         ),
                       ),
@@ -647,18 +724,18 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
   Widget _buildInlineField(String label, TextEditingController controller) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
+      textInputAction: TextInputAction.next,
+      style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
         isDense: true,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white24),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.green, width: 2),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
         ),
       ),
     );

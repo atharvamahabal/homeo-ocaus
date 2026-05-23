@@ -33,7 +33,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       
       if (isLoggedIn && isLoggingIn) {
         final user = authState.value;
-        if (user?.email == 'atharva.smahabal@gmail.com') {
+        final adminEmails = ['atharva.smahabal@gmail.com', 'homeo.ocus@gmail.com'];
+        if (adminEmails.contains(user?.email)) {
           return '/doctor/dashboard';
         }
         return '/home';

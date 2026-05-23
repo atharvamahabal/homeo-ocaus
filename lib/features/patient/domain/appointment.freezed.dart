@@ -29,6 +29,7 @@ mixin _$Appointment {
       throw _privateConstructorUsedError; // 'pending', 'confirmed', 'cancelled', 'completed'
   String get type => throw _privateConstructorUsedError; // 'video', 'clinic'
   String? get reason => throw _privateConstructorUsedError;
+  String? get healthConcern => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
   bool get isPaid => throw _privateConstructorUsedError;
   double? get amount => throw _privateConstructorUsedError;
@@ -54,6 +55,7 @@ abstract class $AppointmentCopyWith<$Res> {
       String status,
       String type,
       String? reason,
+      String? healthConcern,
       String? notes,
       bool isPaid,
       double? amount});
@@ -80,6 +82,7 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
     Object? status = null,
     Object? type = null,
     Object? reason = freezed,
+    Object? healthConcern = freezed,
     Object? notes = freezed,
     Object? isPaid = null,
     Object? amount = freezed,
@@ -117,6 +120,10 @@ class _$AppointmentCopyWithImpl<$Res, $Val extends Appointment>
           ? _value.reason
           : reason // ignore: cast_nullable_to_non_nullable
               as String?,
+      healthConcern: freezed == healthConcern
+          ? _value.healthConcern
+          : healthConcern // ignore: cast_nullable_to_non_nullable
+              as String?,
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
@@ -150,6 +157,7 @@ abstract class _$$AppointmentImplCopyWith<$Res>
       String status,
       String type,
       String? reason,
+      String? healthConcern,
       String? notes,
       bool isPaid,
       double? amount});
@@ -174,6 +182,7 @@ class __$$AppointmentImplCopyWithImpl<$Res>
     Object? status = null,
     Object? type = null,
     Object? reason = freezed,
+    Object? healthConcern = freezed,
     Object? notes = freezed,
     Object? isPaid = null,
     Object? amount = freezed,
@@ -211,6 +220,10 @@ class __$$AppointmentImplCopyWithImpl<$Res>
           ? _value.reason
           : reason // ignore: cast_nullable_to_non_nullable
               as String?,
+      healthConcern: freezed == healthConcern
+          ? _value.healthConcern
+          : healthConcern // ignore: cast_nullable_to_non_nullable
+              as String?,
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
@@ -239,6 +252,7 @@ class _$AppointmentImpl implements _Appointment {
       required this.status,
       required this.type,
       this.reason,
+      this.healthConcern,
       this.notes,
       this.isPaid = false,
       this.amount});
@@ -265,6 +279,8 @@ class _$AppointmentImpl implements _Appointment {
   @override
   final String? reason;
   @override
+  final String? healthConcern;
+  @override
   final String? notes;
   @override
   @JsonKey()
@@ -274,7 +290,7 @@ class _$AppointmentImpl implements _Appointment {
 
   @override
   String toString() {
-    return 'Appointment(id: $id, patientId: $patientId, doctorId: $doctorId, doctorName: $doctorName, dateTime: $dateTime, status: $status, type: $type, reason: $reason, notes: $notes, isPaid: $isPaid, amount: $amount)';
+    return 'Appointment(id: $id, patientId: $patientId, doctorId: $doctorId, doctorName: $doctorName, dateTime: $dateTime, status: $status, type: $type, reason: $reason, healthConcern: $healthConcern, notes: $notes, isPaid: $isPaid, amount: $amount)';
   }
 
   @override
@@ -294,6 +310,8 @@ class _$AppointmentImpl implements _Appointment {
             (identical(other.status, status) || other.status == status) &&
             (identical(other.type, type) || other.type == type) &&
             (identical(other.reason, reason) || other.reason == reason) &&
+            (identical(other.healthConcern, healthConcern) ||
+                other.healthConcern == healthConcern) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.isPaid, isPaid) || other.isPaid == isPaid) &&
             (identical(other.amount, amount) || other.amount == amount));
@@ -301,8 +319,20 @@ class _$AppointmentImpl implements _Appointment {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, patientId, doctorId,
-      doctorName, dateTime, status, type, reason, notes, isPaid, amount);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      patientId,
+      doctorId,
+      doctorName,
+      dateTime,
+      status,
+      type,
+      reason,
+      healthConcern,
+      notes,
+      isPaid,
+      amount);
 
   @JsonKey(ignore: true)
   @override
@@ -328,6 +358,7 @@ abstract class _Appointment implements Appointment {
       required final String status,
       required final String type,
       final String? reason,
+      final String? healthConcern,
       final String? notes,
       final bool isPaid,
       final double? amount}) = _$AppointmentImpl;
@@ -351,6 +382,8 @@ abstract class _Appointment implements Appointment {
   String get type;
   @override // 'video', 'clinic'
   String? get reason;
+  @override
+  String? get healthConcern;
   @override
   String? get notes;
   @override

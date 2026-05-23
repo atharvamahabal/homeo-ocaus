@@ -44,7 +44,11 @@ class PatientRepository {
         phoneNumber: '+91 8329213590',
         imageUrl: '',
         availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-        timeSlots: ['10:00 AM', '11:00 AM', '12:00 PM', '04:00 PM', '05:00 PM'],
+        timeSlots: [
+          '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+          '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+          '07:00 PM', '07:30 PM'
+        ],
       ),
     ];
   }
@@ -137,10 +141,14 @@ class PatientRepository {
   Future<void> addHealthRecord(HealthRecord record) async {
     try {
       print('Attempting to add health record for patient: ${record.patientId}');
+      print('Remedies count to save: ${record.remedies.length}');
+      final data = record.toJson();
+      print('Serialized remedies: ${data['remedies']}');
+      
       await _firestore
           .collection('health_records')
           .doc(record.id)
-          .set(record.toJson());
+          .set(data);
       print('Health record added successfully');
     } catch (e) {
       print('CRITICAL Error in addHealthRecord: $e');

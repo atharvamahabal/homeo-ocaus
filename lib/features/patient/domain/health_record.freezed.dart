@@ -26,6 +26,7 @@ mixin _$HealthRecord {
   String get doctorName => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
   String get diagnosis => throw _privateConstructorUsedError;
+  String? get healthConcern => throw _privateConstructorUsedError;
   List<String> get symptoms => throw _privateConstructorUsedError;
   List<PrescribedRemedy> get remedies => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
@@ -52,6 +53,7 @@ abstract class $HealthRecordCopyWith<$Res> {
       String doctorName,
       DateTime date,
       String diagnosis,
+      String? healthConcern,
       List<String> symptoms,
       List<PrescribedRemedy> remedies,
       String? notes,
@@ -79,6 +81,7 @@ class _$HealthRecordCopyWithImpl<$Res, $Val extends HealthRecord>
     Object? doctorName = null,
     Object? date = null,
     Object? diagnosis = null,
+    Object? healthConcern = freezed,
     Object? symptoms = null,
     Object? remedies = null,
     Object? notes = freezed,
@@ -111,6 +114,10 @@ class _$HealthRecordCopyWithImpl<$Res, $Val extends HealthRecord>
           ? _value.diagnosis
           : diagnosis // ignore: cast_nullable_to_non_nullable
               as String,
+      healthConcern: freezed == healthConcern
+          ? _value.healthConcern
+          : healthConcern // ignore: cast_nullable_to_non_nullable
+              as String?,
       symptoms: null == symptoms
           ? _value.symptoms
           : symptoms // ignore: cast_nullable_to_non_nullable
@@ -154,6 +161,7 @@ abstract class _$$HealthRecordImplCopyWith<$Res>
       String doctorName,
       DateTime date,
       String diagnosis,
+      String? healthConcern,
       List<String> symptoms,
       List<PrescribedRemedy> remedies,
       String? notes,
@@ -179,6 +187,7 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
     Object? doctorName = null,
     Object? date = null,
     Object? diagnosis = null,
+    Object? healthConcern = freezed,
     Object? symptoms = null,
     Object? remedies = null,
     Object? notes = freezed,
@@ -211,6 +220,10 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
           ? _value.diagnosis
           : diagnosis // ignore: cast_nullable_to_non_nullable
               as String,
+      healthConcern: freezed == healthConcern
+          ? _value.healthConcern
+          : healthConcern // ignore: cast_nullable_to_non_nullable
+              as String?,
       symptoms: null == symptoms
           ? _value._symptoms
           : symptoms // ignore: cast_nullable_to_non_nullable
@@ -240,7 +253,8 @@ class __$$HealthRecordImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
+@JsonSerializable(explicitToJson: true)
 class _$HealthRecordImpl implements _HealthRecord {
   const _$HealthRecordImpl(
       {required this.id,
@@ -249,6 +263,7 @@ class _$HealthRecordImpl implements _HealthRecord {
       this.doctorName = 'Doctor',
       required this.date,
       this.diagnosis = 'Consultation',
+      this.healthConcern,
       final List<String> symptoms = const [],
       final List<PrescribedRemedy> remedies = const [],
       this.notes,
@@ -276,6 +291,8 @@ class _$HealthRecordImpl implements _HealthRecord {
   @override
   @JsonKey()
   final String diagnosis;
+  @override
+  final String? healthConcern;
   final List<String> _symptoms;
   @override
   @JsonKey()
@@ -305,7 +322,7 @@ class _$HealthRecordImpl implements _HealthRecord {
 
   @override
   String toString() {
-    return 'HealthRecord(id: $id, patientId: $patientId, patientName: $patientName, doctorName: $doctorName, date: $date, diagnosis: $diagnosis, symptoms: $symptoms, remedies: $remedies, notes: $notes, followUpDate: $followUpDate, prescriptionPdfUrl: $prescriptionPdfUrl, labReportUrl: $labReportUrl)';
+    return 'HealthRecord(id: $id, patientId: $patientId, patientName: $patientName, doctorName: $doctorName, date: $date, diagnosis: $diagnosis, healthConcern: $healthConcern, symptoms: $symptoms, remedies: $remedies, notes: $notes, followUpDate: $followUpDate, prescriptionPdfUrl: $prescriptionPdfUrl, labReportUrl: $labReportUrl)';
   }
 
   @override
@@ -323,6 +340,8 @@ class _$HealthRecordImpl implements _HealthRecord {
             (identical(other.date, date) || other.date == date) &&
             (identical(other.diagnosis, diagnosis) ||
                 other.diagnosis == diagnosis) &&
+            (identical(other.healthConcern, healthConcern) ||
+                other.healthConcern == healthConcern) &&
             const DeepCollectionEquality().equals(other._symptoms, _symptoms) &&
             const DeepCollectionEquality().equals(other._remedies, _remedies) &&
             (identical(other.notes, notes) || other.notes == notes) &&
@@ -344,6 +363,7 @@ class _$HealthRecordImpl implements _HealthRecord {
       doctorName,
       date,
       diagnosis,
+      healthConcern,
       const DeepCollectionEquality().hash(_symptoms),
       const DeepCollectionEquality().hash(_remedies),
       notes,
@@ -373,6 +393,7 @@ abstract class _HealthRecord implements HealthRecord {
       final String doctorName,
       required final DateTime date,
       final String diagnosis,
+      final String? healthConcern,
       final List<String> symptoms,
       final List<PrescribedRemedy> remedies,
       final String? notes,
@@ -395,6 +416,8 @@ abstract class _HealthRecord implements HealthRecord {
   DateTime get date;
   @override
   String get diagnosis;
+  @override
+  String? get healthConcern;
   @override
   List<String> get symptoms;
   @override
@@ -566,10 +589,10 @@ class __$$PrescribedRemedyImplCopyWithImpl<$Res>
 class _$PrescribedRemedyImpl implements _PrescribedRemedy {
   const _$PrescribedRemedyImpl(
       {required this.name,
-      required this.potency,
-      required this.dosage,
-      required this.frequency,
-      required this.duration,
+      this.potency = '',
+      this.dosage = '',
+      this.frequency = 'As directed',
+      this.duration = 'Until finished',
       this.instructions});
 
   factory _$PrescribedRemedyImpl.fromJson(Map<String, dynamic> json) =>
@@ -578,14 +601,18 @@ class _$PrescribedRemedyImpl implements _PrescribedRemedy {
   @override
   final String name;
   @override
+  @JsonKey()
   final String potency;
   @override
+  @JsonKey()
   final String dosage;
 // e.g., "4 pills"
   @override
+  @JsonKey()
   final String frequency;
 // e.g., "3 times a day"
   @override
+  @JsonKey()
   final String duration;
 // e.g., "7 days"
   @override
@@ -635,10 +662,10 @@ class _$PrescribedRemedyImpl implements _PrescribedRemedy {
 abstract class _PrescribedRemedy implements PrescribedRemedy {
   const factory _PrescribedRemedy(
       {required final String name,
-      required final String potency,
-      required final String dosage,
-      required final String frequency,
-      required final String duration,
+      final String potency,
+      final String dosage,
+      final String frequency,
+      final String duration,
       final String? instructions}) = _$PrescribedRemedyImpl;
 
   factory _PrescribedRemedy.fromJson(Map<String, dynamic> json) =

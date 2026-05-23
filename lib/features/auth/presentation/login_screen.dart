@@ -102,7 +102,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (mounted) {
                           final user = authRepo.currentUser;
                           if (user != null) {
-                            if (user.email == 'atharva.smahabal@gmail.com') {
+                            final adminEmails = ['atharva.smahabal@gmail.com', 'homeo.ocus@gmail.com'];
+                            if (adminEmails.contains(user.email)) {
                               context.go('/doctor/dashboard');
                             } else {
                               final profile = await ref.read(patientRepositoryProvider).getProfile(user.uid);
