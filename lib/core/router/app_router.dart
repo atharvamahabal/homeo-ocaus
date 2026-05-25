@@ -13,6 +13,7 @@ import '../../features/doctor/presentation/patient_management_screen.dart';
 import '../../features/doctor/presentation/patient_detail_screen.dart';
 import '../../features/doctor/presentation/remedy_database_screen.dart';
 import '../../features/doctor/presentation/admin_panel_screen.dart';
+import '../../features/patient/presentation/remedy_chat_screen.dart';
 import '../../features/patient/presentation/consultation_detail_screen.dart';
 import '../../features/patient/domain/health_record.dart';
 import '../../features/patient/domain/doctor.dart';
@@ -123,6 +124,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final record = state.extra as HealthRecord;
           return ConsultationDetailScreen(record: record);
         },
+      ),
+      GoRoute(
+        path: '/ai-chat',
+        name: 'ai-chat',
+        builder: (context, state) => const RemedyChatScreen(),
       ),
     ],
   );

@@ -1,6 +1,9 @@
 requests
 beautifulsoup4
-supabase
+psycopg2-binary
 sentence-transformers
 python-dotenv
 tqdm
+fastapi
+uvicorn
+numpy

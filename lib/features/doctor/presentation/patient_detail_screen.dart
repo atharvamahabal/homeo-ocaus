@@ -6,6 +6,7 @@ import '../../patient/domain/health_record.dart';
 import '../../patient/domain/appointment.dart';
 import '../../patient/data/patient_repository.dart';
 import 'package:intl/intl.dart';
+import '../../../core/services/voice_service.dart';
 
 class PatientDetailScreen extends ConsumerWidget {
   final PatientProfile patient;
@@ -241,10 +242,14 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
   final _frequencyController = TextEditingController();
   final _durationController = TextEditingController();
   final _instructionsController = TextEditingController();
+  
+  String? _listeningField;
+  bool _isVoiceInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _initVoice();
     _fetchLatestAppointment();
     if (widget.recordToEdit != null) {
       _subjectiveController.text = widget.recordToEdit!.symptoms.join(', ');
@@ -269,6 +274,35 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
         _followUpTime = TimeOfDay.fromDateTime(widget.recordToEdit!.followUpDate!);
       }
     }
+  }
+
+  Future<void> _initVoice() async {
+    _isVoiceInitialized = await VoiceService.init();
+    if (mounted) setState(() {});
+  }
+
+  void _startVoiceInput(String fieldId, TextEditingController controller, String langCode) async {
+    if (!_isVoiceInitialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voice recognition not available')),
+      );
+      return;
+    }
+
+    setState(() => _listeningField = fieldId);
+
+    await VoiceService.startListening(
+      languageCode: langCode,
+      onResult: (text) {
+        if (mounted) {
+          setState(() {
+            final currentText = controller.text;
+            controller.text = currentText.isEmpty ? text : '$currentText $text';
+            _listeningField = null;
+          });
+        }
+      },
+    );
   }
 
   Future<void> _fetchLatestAppointment() async {
@@ -676,27 +710,68 @@ class _ConsultationFormState extends ConsumerState<ConsultationForm> {
   }
 
   Widget _buildSOAPField(String label, String hint, TextEditingController controller) {
+    final isListening = _listeningField == label;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        controller: controller,
-        maxLines: 3,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white38),
-          alignLabelWithHint: true,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.white24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+              if (_isVoiceInitialized)
+                Row(
+                  children: [
+                    if (isListening)
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                      ),
+                    const SizedBox(width: 8),
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.mic,
+                        color: isListening ? Colors.red : Colors.green,
+                        size: 20,
+                      ),
+                      tooltip: 'Voice Input',
+                      onSelected: (langCode) => _startVoiceInput(label, controller, langCode),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'en-US', child: Text('English')),
+                        const PopupMenuItem(value: 'hi-IN', child: Text('Hindi (हिंदी)')),
+                        const PopupMenuItem(value: 'mr-IN', child: Text('Marathi (मराठी)')),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.green, width: 2),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            maxLines: 3,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: Colors.white38),
+              alignLabelWithHint: true,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.green, width: 2),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

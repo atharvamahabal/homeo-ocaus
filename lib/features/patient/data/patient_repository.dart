@@ -4,6 +4,7 @@ import '../../auth/domain/patient_profile.dart';
 import '../domain/doctor.dart';
 import '../domain/appointment.dart';
 import '../domain/health_record.dart';
+import 'package:homeo_ocaus/core/services/notification_service.dart';
 
 final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
@@ -74,6 +75,26 @@ class PatientRepository {
           .set(data);
           
       print('Firestore set() request successful');
+
+      // Trigger push notification to doctor
+      try {
+        final patientProfile = await getProfile(appointment.patientId);
+        final patientName = patientProfile?.name ?? 'A patient';
+        
+        await NotificationService().sendNotification(
+          recipientId: appointment.doctorId, // Send to the doctor (e.g., 'dr_tanaya')
+          title: 'New Appointment Booking',
+          body: '$patientName has booked an appointment regarding: ${appointment.healthConcern ?? "No health concern provided"}',
+          data: {
+            'type': 'new_appointment',
+            'appointmentId': appointment.id,
+            'patientId': appointment.patientId,
+          },
+        );
+      } catch (e) {
+        print('Error sending notification record: $e');
+        // Don't fail the booking if notification fails
+      }
     } catch (e) {
       print('CRITICAL Error in bookAppointment: $e');
       // Re-throw with a more descriptive message if it's a permission error

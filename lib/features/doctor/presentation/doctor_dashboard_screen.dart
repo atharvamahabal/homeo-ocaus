@@ -5,6 +5,8 @@ import '../../auth/data/auth_repository.dart';
 import '../data/doctor_repository.dart';
 import '../../patient/domain/appointment.dart';
 import 'package:intl/intl.dart';
+import 'package:homeo_ocaus/core/services/notification_service.dart';
+import 'package:homeo_ocaus/core/utils/dummy_data_tool.dart';
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -16,6 +18,30 @@ class DoctorDashboardScreen extends ConsumerStatefulWidget {
 class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   String _timeRange = 'Today'; // 'Today', 'Weekly', 'Monthly'
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Save FCM token for doctor notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _saveDoctorToken();
+    });
+  }
+
+  Future<void> _saveDoctorToken() async {
+    final user = ref.read(authRepositoryProvider).currentUser;
+    if (user != null) {
+      // Use the hardcoded doctor ID or the user's UID
+      // For consistency with PatientRepository.getDoctors, we use 'dr_tanaya'
+      // but also the user's UID to be more specific.
+      await NotificationService().saveTokenToFirestore('dr_tanaya');
+      await NotificationService().saveTokenToFirestore(user.uid);
+
+      // Start listening for new appointment notifications while in foreground
+      NotificationService().startForegroundNotificationListener('dr_tanaya');
+      NotificationService().startForegroundNotificationListener(user.uid);
+    }
+  }
 
   @override
   void dispose() {
@@ -78,6 +104,29 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         user?.email ?? 'homeo.ocus@gmail.com',
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Inserting test data...')),
+                          );
+                          await DummyDataTool.insertTestData();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Test data inserted! Notification triggered.'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.bug_report, size: 18),
+                        label: const Text('Test Notification'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.withOpacity(0.2),
+                          foregroundColor: Colors.orange[800],
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -169,6 +218,12 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               subtitle: 'Search & manage remedies',
               icon: Icons.medication,
               onTap: () => context.push('/doctor/remedies'),
+            ),
+            _QuickActionTile(
+              title: 'Remedy AI Chatbot',
+              subtitle: 'Search symptoms using AI Materia Medica',
+              icon: Icons.chat_bubble_outline,
+              onTap: () => context.push('/ai-chat'),
             ),
             _QuickActionTile(
               title: 'Admin Panel',
