@@ -5,12 +5,21 @@ import uuid
 import os
 
 # 1. Initialize Firebase Admin
-cert_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
-if not os.path.exists(cert_path):
-    print("Error: serviceAccountKey.json not found.")
-    exit()
+from dotenv import load_dotenv
+import json
+load_dotenv()
 
-cred = credentials.Certificate(cert_path)
+service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+if service_account_json:
+    service_account_info = json.loads(service_account_json)
+    cred = credentials.Certificate(service_account_info)
+else:
+    cert_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+    if not os.path.exists(cert_path):
+        print("Error: FIREBASE_SERVICE_ACCOUNT env var or serviceAccountKey.json not found.")
+        exit()
+    cred = credentials.Certificate(cert_path)
+
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 

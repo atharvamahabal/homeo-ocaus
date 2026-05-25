@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Sensitive Files
+.env
+serviceAccountKey.json
+Materia-Medica/.env
+Materia-Medica/serviceAccountKey.json

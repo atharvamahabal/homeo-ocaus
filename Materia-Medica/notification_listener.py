@@ -14,21 +14,24 @@ def start_notification_listener():
     This replaces the need for paid Firebase Cloud Functions.
     """
     # 1. Initialize Firebase Admin
-    # Note: Requires serviceAccountKey.json in the same folder
-    cert_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+    # Use environment variable for credentials if available
+    service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
     
-    if not os.path.exists(cert_path):
-        print("\n" + "!"*60)
-        print("ERROR: serviceAccountKey.json NOT FOUND!")
-        print("To enable real-time notifications without a paid plan, please:")
-        print("1. Go to Firebase Console -> Project Settings -> Service Accounts")
-        print("2. Click 'Generate new private key'")
-        print(f"3. Rename the file to 'serviceAccountKey.json' and place it in: {os.path.dirname(__file__)}")
-        print("!"*60 + "\n")
-        return
-
     try:
-        cred = credentials.Certificate(cert_path)
+        if service_account_json:
+            import json
+            service_account_info = json.loads(service_account_json)
+            cred = credentials.Certificate(service_account_info)
+        else:
+            # Fallback to file if env var is missing
+            cert_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+            if not os.path.exists(cert_path):
+                print("\n" + "!"*60)
+                print("ERROR: FIREBASE_SERVICE_ACCOUNT env var or serviceAccountKey.json NOT FOUND!")
+                print("!"*60 + "\n")
+                return
+            cred = credentials.Certificate(cert_path)
+            
         firebase_admin.initialize_app(cred)
         db = firestore.client()
         print("✅ Firebase Admin initialized. Listening for notifications...")
