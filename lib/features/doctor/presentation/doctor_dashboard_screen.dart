@@ -31,6 +31,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   Future<void> _saveDoctorToken() async {
     final user = ref.read(authRepositoryProvider).currentUser;
     if (user != null) {
+      debugPrint('Initializing notifications for doctor: ${user.email}');
       // Use the hardcoded doctor ID or the user's UID
       // For consistency with PatientRepository.getDoctors, we use 'dr_tanaya'
       // but also the user's UID to be more specific.
@@ -40,6 +41,8 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       // Start listening for new appointment notifications while in foreground
       NotificationService().startForegroundNotificationListener('dr_tanaya');
       NotificationService().startForegroundNotificationListener(user.uid);
+    } else {
+      debugPrint('No user logged in, skipping notification initialization');
     }
   }
 
@@ -108,16 +111,29 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
                         onPressed: () async {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Inserting test data...')),
-                          );
-                          await DummyDataTool.insertTestData();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Test data inserted! Notification triggered.'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                          try {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Inserting test data...')),
+                            );
+                            await DummyDataTool.insertTestData();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Test data inserted! Notification triggered.'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                         icon: const Icon(Icons.bug_report, size: 18),
                         label: const Text('Test Notification'),

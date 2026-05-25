@@ -81,6 +81,7 @@ class PatientRepository {
         final patientProfile = await getProfile(appointment.patientId);
         final patientName = patientProfile?.name ?? 'A patient';
         
+        print('Triggering notification for doctor: ${appointment.doctorId}');
         await NotificationService().sendNotification(
           recipientId: appointment.doctorId, // Send to the doctor (e.g., 'dr_tanaya')
           title: 'New Appointment Booking',
@@ -91,6 +92,7 @@ class PatientRepository {
             'patientId': appointment.patientId,
           },
         );
+        print('Notification triggered successfully');
       } catch (e) {
         print('Error sending notification record: $e');
         // Don't fail the booking if notification fails

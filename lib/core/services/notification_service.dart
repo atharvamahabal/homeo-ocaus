@@ -89,15 +89,18 @@ class NotificationService {
   /// Starts listening to the Firestore 'notifications' collection for the current user.
   /// This acts as a fallback/mock for real push notifications when Cloud Functions are not yet set up.
   void startForegroundNotificationListener(String userId) {
+    debugPrint('Starting foreground listener for user: $userId');
     _firestore
         .collection('notifications')
         .where('recipientId', isEqualTo: userId)
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .listen((snapshot) {
+      debugPrint('Notification snapshot received. Count: ${snapshot.docs.length}');
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data();
+          debugPrint('New notification document found: $data');
           if (data != null) {
             _showLocalNotificationFromData(
               title: data['title'] ?? 'Notification',
@@ -107,9 +110,12 @@ class NotificationService {
             
             // Mark as 'processed' so it doesn't show again
             change.doc.reference.update({'status': 'processed'});
+            debugPrint('Notification marked as processed.');
           }
         }
       }
+    }, onError: (e) {
+      debugPrint('Error in notification listener: $e');
     });
   }
 

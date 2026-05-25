@@ -26,7 +26,7 @@ void main() async {
   await NotificationService().initialize();
 
   // Initialize Dummy Data (Uncomment to insert test data on app start)
-  await DummyDataTool.insertTestData();
+  // await DummyDataTool.insertTestData();
 
   // Initialize Hive
   await Hive.initFlutter();
