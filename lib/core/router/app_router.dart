@@ -6,12 +6,10 @@ import '../../features/patient/presentation/patient_home_screen.dart';
 import '../../features/patient/presentation/doctor_list_screen.dart';
 import '../../features/patient/presentation/appointment_booking_screen.dart';
 import '../../features/patient/presentation/health_records_screen.dart';
-import '../../features/patient/presentation/remedy_tracker_screen.dart';
 import '../../features/patient/presentation/doctor_appointments_screen.dart';
 import '../../features/doctor/presentation/doctor_dashboard_screen.dart';
 import '../../features/doctor/presentation/patient_management_screen.dart';
 import '../../features/doctor/presentation/patient_detail_screen.dart';
-import '../../features/doctor/presentation/remedy_database_screen.dart';
 import '../../features/doctor/presentation/admin_panel_screen.dart';
 import '../../features/patient/presentation/remedy_chat_screen.dart';
 import '../../features/patient/presentation/consultation_detail_screen.dart';
@@ -77,11 +75,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/doctor/remedies',
-        name: 'doctor-remedies',
-        builder: (context, state) => const RemedyDatabaseScreen(),
-      ),
-      GoRoute(
         path: '/doctor/admin',
         name: 'doctor-admin',
         builder: (context, state) => const AdminPanelScreen(),
@@ -103,11 +96,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/records',
         name: 'records',
         builder: (context, state) => const HealthRecordsScreen(),
-      ),
-      GoRoute(
-        path: '/remedies',
-        name: 'remedies',
-        builder: (context, state) => const RemedyTrackerScreen(),
       ),
       GoRoute(
         path: '/doctor-appointments',

@@ -214,12 +214,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               onTap: () => context.push('/doctor/patients'),
             ),
             _QuickActionTile(
-              title: 'Remedy Database',
-              subtitle: 'Search & manage remedies',
-              icon: Icons.medication,
-              onTap: () => context.push('/doctor/remedies'),
-            ),
-            _QuickActionTile(
               title: 'Remedy AI Chatbot',
               subtitle: 'Search symptoms using AI Materia Medica',
               icon: Icons.chat_bubble_outline,
