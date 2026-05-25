@@ -107,6 +107,19 @@ class DoctorRepository {
     return snapshot.docs.length.toString();
   }
 
+  Future<List<Appointment>> getPendingAppointmentsList(String doctorId) async {
+    final snapshot = await _firestore
+        .collection('appointments')
+        .where('doctorId', isEqualTo: doctorId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+    
+    final appointments = snapshot.docs.map((doc) => Appointment.fromJson(doc.data())).toList();
+    // Sort by date time ascending
+    appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    return appointments;
+  }
+
   Future<void> updateAppointmentStatus(String appointmentId, String status) async {
     await _firestore
         .collection('appointments')

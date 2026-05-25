@@ -106,6 +106,7 @@ class _RemedyChatScreenState extends ConsumerState<RemedyChatScreen> {
                     child: Text(
                       msg['text']!,
                       style: TextStyle(
+                        fontSize: 16, // Increased font size
                         color: isUser ? const Color(0xFF1B5E20) : Colors.black87,
                       ),
                     ),

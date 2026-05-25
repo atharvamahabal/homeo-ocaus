@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from postgrest import SyncPostgrestClient
+import threading
+from notification_listener import start_notification_listener
 
 load_dotenv()
 
@@ -67,35 +69,41 @@ async def chat_with_remedies(query: ChatQuery):
         client = SyncPostgrestClient(f"{SUPABASE_URL}/rest/v1", headers=headers)
         
         # 3. Use the match_remedies RPC function for high-performance vector search
-        # This is much faster than fetching all rows and calculating similarity in Python
         rpc_res = client.rpc("match_remedies", {
             "query_embedding": query_embedding.tolist(),
-            "match_threshold": 0.4,
-            "match_count": 3
+            "match_threshold": 0.3, # Lowered slightly to give more options
+            "match_count": 5 # Increased to top 5
         }).execute()
         
         top_results = rpc_res.data
         
+        # Sort explicitly in Python just to be 100% sure
+        top_results.sort(key=lambda x: x["similarity"], reverse=True)
+        
         if not top_results:
             return {"reply": "I couldn't find a specific homeopathic remedy for that. Could you describe the symptoms in more detail?"}
         
-        # 4. Fetch full text for these results to provide descriptions
-        # (RPC returns IDs and names, we need the text)
+        # 4. Fetch full text for these results
         ids = [res["id"] for res in top_results]
         remedies_res = client.from_("remedies").select("id, name, full_text").in_("id", ids).execute()
-        
-        # Map them back to keep the similarity order
         remedy_map = {r["id"]: r for r in remedies_res.data}
         
         # 5. Format the response
-        reply = "Based on Materia Medica (Cloud), here are the most relevant remedies:\n\n"
+        reply = "Based on AI Semantic Search, here are the most relevant remedies sorted by match percentage:\n\n"
         for i, res in enumerate(top_results):
             remedy_data = remedy_map.get(res["id"])
             if remedy_data:
+                match_pct = int(res['similarity']*100)
                 cleaned_text = clean_remedy_text(remedy_data["full_text"])
-                reply += f"{i+1}. {res['name']} (Match: {int(res['similarity']*100)}%)\n{cleaned_text[:400]}...\n\n"
+                
+                # Highlight the #1 result
+                tag = "⭐ BEST MATCH" if i == 0 else f"Match #{i+1}"
+                reply += f"{tag} ({match_pct}%)\n"
+                reply += f"🌿 Remedy: {res['name'].upper()}\n"
+                reply += f"📖 Description: {cleaned_text[:600]}...\n\n"
+                reply += "-------------------\n\n"
             
-        return {"reply": reply}
+        return {"reply": reply.strip()}
 
     except Exception as e:
         print(f"Error in /chat: {e}")
@@ -103,8 +111,13 @@ async def chat_with_remedies(query: ChatQuery):
 
 @app.get("/")
 async def root():
-    return {"status": "Homeo AI Backend (Supabase Mode) is running"}
+    return {"status": "Homeo AI Backend (Supabase Mode) is running", "notifications": "Listener Active"}
 
 if __name__ == "__main__":
+    # Start the notification listener in a separate background thread
+    print("Starting notification listener thread...")
+    notification_thread = threading.Thread(target=start_notification_listener, daemon=True)
+    notification_thread.start()
+    
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

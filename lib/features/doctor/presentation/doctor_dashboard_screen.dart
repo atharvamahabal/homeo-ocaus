@@ -6,7 +6,6 @@ import '../data/doctor_repository.dart';
 import '../../patient/domain/appointment.dart';
 import 'package:intl/intl.dart';
 import 'package:homeo_ocaus/core/services/notification_service.dart';
-import 'package:homeo_ocaus/core/utils/dummy_data_tool.dart';
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -26,6 +25,193 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _saveDoctorToken();
     });
+  }
+
+  Future<void> _showPendingAppointments(BuildContext context, String doctorId) async {
+    final doctorRepo = ref.read(doctorRepositoryProvider);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pending Appointments',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                child: FutureBuilder<List<Appointment>>(
+                  future: doctorRepo.getPendingAppointmentsList(doctorId),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final appointments = snapshot.data ?? [];
+                    if (appointments.isEmpty) {
+                      return const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                            SizedBox(height: 16),
+                            Text('No pending appointments!'),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: appointments.length,
+                      itemBuilder: (context, index) {
+                        final appt = appointments[index];
+                        return FutureBuilder<PatientProfile?>(
+                          future: doctorRepo.getPatientProfile(appt.patientId),
+                          builder: (context, patientSnapshot) {
+                            final patient = patientSnapshot.data;
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            patient?.name ?? 'Loading...',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange.shade50,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'PENDING',
+                                            style: TextStyle(
+                                              color: Colors.orange.shade700,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat('EEE, MMM d, yyyy').format(appt.dateTime),
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat('hh:mm a').format(appt.dateTime),
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Concern: ${appt.healthConcern ?? "Not specified"}',
+                                      style: const TextStyle(fontStyle: FontStyle.italic),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () async {
+                                              await doctorRepo.updateAppointmentStatus(appt.id, 'rejected');
+                                              setModalState(() {}); // Refresh modal content
+                                              setState(() {}); // Refresh dashboard
+                                            },
+                                            style: OutlinedButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                              side: const BorderSide(color: Colors.red),
+                                            ),
+                                            child: const Text('Reject'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () async {
+                                              await doctorRepo.updateAppointmentStatus(appt.id, 'confirmed');
+                                              setModalState(() {}); // Refresh modal content
+                                              setState(() {}); // Refresh dashboard
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            child: const Text('Approve'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _saveDoctorToken() async {
@@ -108,42 +294,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
                       ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Inserting test data...')),
-                            );
-                            await DummyDataTool.insertTestData();
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Test data inserted! Notification triggered.'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error: ${e.toString()}'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.bug_report, size: 18),
-                        label: const Text('Test Notification'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.withOpacity(0.2),
-                          foregroundColor: Colors.orange[800],
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -203,7 +353,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   future: doctorRepo.getPendingConsultations(doctorId),
                   icon: Icons.pending_actions,
                   color: Colors.orange,
-                  onTap: () => context.push('/doctor/patients'), // For now, same screen
+                  onTap: () => _showPendingAppointments(context, doctorId),
                 ),
                 _StatCard(
                   title: 'Monthly Earnings',

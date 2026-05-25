@@ -5,7 +5,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'app.dart';
 import 'package:homeo_ocaus/core/services/notification_service.dart';
-import 'package:homeo_ocaus/core/utils/dummy_data_tool.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -24,9 +23,6 @@ void main() async {
 
   // Initialize Notification Service
   await NotificationService().initialize();
-
-  // Initialize Dummy Data (Uncomment to insert test data on app start)
-  // await DummyDataTool.insertTestData();
 
   // Initialize Hive
   await Hive.initFlutter();
