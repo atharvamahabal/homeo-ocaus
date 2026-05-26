@@ -25,7 +25,7 @@ CONFIG = {
         {"slug": "adolf-zur-lippe", "name": "Adolf zur Lippe"},
     ],
     "JSON_BACKUP": "scraped_data.json",
-    "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
+    "EMBEDDING_MODEL": "pritamdeka/S-PubMedBert-MS-MARCO",
     "BATCH_SIZE": 50,
     "DELAY": 3.0
 }

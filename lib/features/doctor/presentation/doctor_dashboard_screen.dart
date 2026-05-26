@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/doctor_repository.dart';
 import '../../patient/domain/appointment.dart';
+import '../../auth/domain/patient_profile.dart';
 import 'package:intl/intl.dart';
 import 'package:homeo_ocaus/core/services/notification_service.dart';
 
