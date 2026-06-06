@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
@@ -7,8 +8,8 @@ class VoiceService {
 
   static Future<bool> init() async {
     bool available = await _speech.initialize(
-      onStatus: (status) => print('STT Status: $status'),
-      onError: (error) => print('STT Error: $error'),
+      onStatus: (status) => debugPrint('STT Status: $status'),
+      onError: (error) => debugPrint('STT Error: $error'),
     );
     return available;
   }
@@ -17,10 +18,12 @@ class VoiceService {
     required Function(String) onResult,
     String languageCode = 'en-US', // Default to English
   }) async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
-      if (!status.isGranted) return;
+    if (!kIsWeb) {
+      var status = await Permission.microphone.status;
+      if (!status.isGranted) {
+        status = await Permission.microphone.request();
+        if (!status.isGranted) return;
+      }
     }
 
     bool available = await _speech.initialize();

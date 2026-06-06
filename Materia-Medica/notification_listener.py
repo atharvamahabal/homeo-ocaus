@@ -1,5 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, messaging, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 import os
 import time
 import threading
@@ -34,9 +35,9 @@ def start_notification_listener():
             
         firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print("✅ Firebase Admin initialized. Listening for notifications...")
+        print("Firebase Admin initialized. Listening for notifications...")
     except Exception as e:
-        print(f"❌ Error initializing Firebase Admin: {e}")
+        print(f"Error initializing Firebase Admin: {e}")
         return
 
     # 2. Define the callback for Firestore snapshots
@@ -56,13 +57,13 @@ def start_notification_listener():
                     if not recipient_id:
                         continue
                         
-                    print(f"🔔 Processing notification for: {recipient_id}")
+                    print(f"Processing notification for: {recipient_id}")
                     
                     try:
                         # 3. Get FCM Token for the recipient
                         token_doc = db.collection('fcm_tokens').document(recipient_id).get()
                         if not token_doc.exists:
-                            print(f"⚠️ No FCM token found for user: {recipient_id}")
+                            print(f"No FCM token found for user: {recipient_id}")
                             # Mark as failed so we don't keep trying
                             doc.reference.update({'status': 'no_token_found'})
                             continue
@@ -80,7 +81,7 @@ def start_notification_listener():
                         )
                         
                         response = messaging.send(message)
-                        print(f"🚀 Successfully sent push notification: {response}")
+                        print(f"Successfully sent push notification: {response}")
                         
                         # 5. Mark as sent
                         doc.reference.update({
@@ -90,11 +91,11 @@ def start_notification_listener():
                         })
                         
                     except Exception as e:
-                        print(f"❌ Error sending notification: {e}")
+                        print(f"Error sending notification: {e}")
                         doc.reference.update({'status': 'error', 'error': str(e)})
 
     # 3. Start watching the collection
-    col_query = db.collection('notifications').where('status', '==', 'pending')
+    col_query = db.collection('notifications').where(filter=FieldFilter('status', '==', 'pending'))
     query_watch = col_query.on_snapshot(on_snapshot)
 
     # Keep the thread alive

@@ -1,46 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Homeo-Ocaus: Advanced Homeopathic Clinic Management System.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="homeo_ocaus">
+  <meta name="apple-mobile-web-app-title" content="Homeo-Ocaus">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>homeo_ocaus</title>
+  <title>Homeo-Ocaus | Clinic Management</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Google Sign-In Client ID -->
+  <meta name="google-signin-client_id" content="807016590624-hn1q66jgl400f2o7josrkvjts44pgesk.apps.googleusercontent.com">
+
+  <style>
+    body {
+      background-color: #F1F8E9;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .loader {
+      border: 6px solid #DCEDC8;
+      border-top: 6px solid #1B5E20;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-text {
+      color: #1B5E20;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="loading-indicator" class="loading-container">
+    <div class="loader"></div>
+    <div class="loading-text">INITIALIZING HOMEO-OCAUS...</div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
   <script src="flutter_bootstrap.js" async></script>
+  
+  <script>
+    window.addEventListener('load', function() {
+      // Remove loading indicator once Flutter is ready
+      var loadingIndicator = document.getElementById('loading-indicator');
+      if (loadingIndicator) {
+        // Flutter usually takes over the body, but this is a safety net
+        setTimeout(function() {
+          if (document.body.contains(loadingIndicator)) {
+            loadingIndicator.style.display = 'none';
+          }
+        }, 3000);
+      }
+    });
+  </script>
 </body>
 </html>

@@ -28,7 +28,7 @@ class NotificationService {
     }
 
     // Request Android 13+ permission explicitly
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       final androidPlugin = _localNotifications
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
       await androidPlugin?.requestNotificationsPermission();
@@ -55,7 +55,7 @@ class NotificationService {
     );
 
     // Create Android Notification Channel
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
         'high_importance_channel',
         'High Importance Notifications',

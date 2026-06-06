@@ -24,6 +24,7 @@ class AuthRepository {
     try {
       debugPrint('AuthRepo: Initializing GoogleSignIn...');
       final googleSignIn = GoogleSignIn(
+        clientId: kIsWeb ? '1098453998984-imlq4ouggtdpsrkrep7ijqhm8thca9ak.apps.googleusercontent.com' : null,
         serverClientId: '1098453998984-imlq4ouggtdpsrkrep7ijqhm8thca9ak.apps.googleusercontent.com',
       );
       

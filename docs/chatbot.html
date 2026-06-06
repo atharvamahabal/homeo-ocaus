@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Remedy Assistant | Homeo-Ocaus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { display: block; background: #f1f8e9; margin: 0; height: 100vh; display: flex; flex-direction: column; }
+        .chat-header { background: var(--primary-color); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        #chat-window { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 20px; font-size: 15px; line-height: 1.4; }
+        .msg-user { align-self: flex-end; background: #DCEDC8; color: #1B5E20; border-bottom-right-radius: 4px; }
+        .msg-bot { align-self: flex-start; background: white; color: #333; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .chat-input-area { background: white; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; }
+        input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 25px; outline: none; }
+        .repertory-panel { background: white; padding: 15px; border-bottom: 1px solid #eee; display: none; }
+        .chip { display: inline-flex; align-items: center; background: #DCEDC8; color: #1B5E20; padding: 5px 12px; border-radius: 15px; margin: 4px; font-size: 13px; font-weight: bold; }
+        .chip span { margin-left: 8px; cursor: pointer; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button onclick="history.back()" style="width: auto; padding: 5px 10px; background: rgba(255,255,255,0.2);">←</button>
+            <span style="font-weight: bold;">AI Remedy Assistant</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="toggle-repertory" style="width: auto; padding: 5px 10px; background: rgba(255,255,255,0.2);">📖 Mode</button>
+            <button id="btn-settings" style="width: auto; padding: 5px 10px; background: rgba(255,255,255,0.2);">⚙️</button>
+        </div>
+    </div>
+
+    <div id="repertory-panel" class="repertory-panel">
+        <div style="font-size: 11px; font-weight: bold; color: var(--primary-color); margin-bottom: 10px;">REPERTORY MODE (3-5 SYMPTOMS)</div>
+        <div id="symptom-chips"></div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <input type="text" id="symptom-input" placeholder="Add a single symptom...">
+            <button id="btn-add-symptom" style="width: auto; padding: 0 15px;">Add</button>
+        </div>
+        <button id="btn-repertorize" style="margin-top: 10px; background: var(--primary-color); color: white;">REPERTORIZE NOW</button>
+    </div>
+
+    <div id="chat-window">
+        <div class="msg msg-bot">Hello! I am your AI Homeopathic Assistant. Describe your symptoms or switch to Repertory Mode.</div>
+    </div>
+
+    <div class="chat-input-area" id="standard-input">
+        <input type="text" id="chat-input" placeholder="Describe symptoms...">
+        <button id="btn-send" style="width: auto; padding: 0 20px;">Send</button>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script>
+        let isRepertoryMode = false;
+        let symptoms = [];
+        let backendIp = localStorage.getItem('backendIp') || 'localhost';
+
+        // UI Handlers
+        document.getElementById('toggle-repertory').onclick = () => {
+            isRepertoryMode = !isRepertoryMode;
+            document.getElementById('repertory-panel').style.display = isRepertoryMode ? 'block' : 'none';
+            document.getElementById('standard-input').style.display = isRepertoryMode ? 'none' : 'flex';
+        };
+
+        document.getElementById('btn-settings').onclick = () => {
+            const newIp = prompt("Enter Backend IP Address (e.g. 192.168.1.5 or localhost)", backendIp);
+            if (newIp) {
+                backendIp = newIp;
+                localStorage.setItem('backendIp', newIp);
+            }
+        };
+
+        document.getElementById('btn-add-symptom').onclick = () => {
+            const val = document.getElementById('symptom-input').value.trim();
+            if (val && symptoms.length < 5) {
+                symptoms.push(val);
+                document.getElementById('symptom-input').value = '';
+                renderChips();
+            }
+        };
+
+        function renderChips() {
+            const container = document.getElementById('symptom-chips');
+            container.innerHTML = symptoms.map((s, i) => `
+                <div class="chip">${s} <span onclick="removeSymptom(${i})">✕</span></div>
+            `).join('');
+        }
+
+        window.removeSymptom = (i) => {
+            symptoms.splice(i, 1);
+            renderChips();
+        };
+
+        // Chat Logic
+        async function sendMessage(text, symptomsList = []) {
+            const chatWindow = document.getElementById('chat-window');
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'msg msg-user';
+            userMsg.innerText = text || `Repertorizing: ${symptomsList.join(', ')}`;
+            chatWindow.appendChild(userMsg);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            try {
+                const response = await fetch(`http://${backendIp}:8000/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, symptoms: symptomsList })
+                });
+                const data = await response.json();
+                
+                const botMsg = document.createElement('div');
+                botMsg.className = 'msg msg-bot';
+                botMsg.style.whiteSpace = 'pre-wrap';
+                botMsg.innerHTML = data.reply.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                chatWindow.appendChild(botMsg);
+            } catch (e) {
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'msg msg-bot';
+                errorMsg.style.color = 'red';
+                errorMsg.innerText = "Error: Could not connect to AI server at " + backendIp;
+                chatWindow.appendChild(errorMsg);
+            }
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        document.getElementById('btn-send').onclick = () => {
+            const input = document.getElementById('chat-input');
+            if (input.value.trim()) {
+                sendMessage(input.value.trim());
+                input.value = '';
+            }
+        };
+
+        document.getElementById('btn-repertorize').onclick = () => {
+            if (symptoms.length >= 3) {
+                sendMessage("", symptoms);
+                symptoms = [];
+                renderChips();
+                document.getElementById('toggle-repertory').click();
+            } else {
+                alert("Please add at least 3 symptoms.");
+            }
+        };
+    </script>
+</body>
+</html>

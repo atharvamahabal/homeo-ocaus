@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -13,7 +14,7 @@ class SettingsState {
 class SettingsNotifier extends StateNotifier<SettingsState> {
   static const String _boxName = 'settingsBox';
   static const String _ipKey = 'backendIp';
-  static const String _defaultIp = '192.168.68.101';
+  static String get _defaultIp => kIsWeb ? 'localhost' : '192.168.68.101';
 
   SettingsNotifier() : super(SettingsState(backendIp: _defaultIp)) {
     _loadSettings();

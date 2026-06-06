@@ -7,6 +7,7 @@ import '../../patient/domain/appointment.dart';
 import '../../auth/domain/patient_profile.dart';
 import 'package:intl/intl.dart';
 import 'package:homeo_ocaus/core/services/notification_service.dart';
+import '../../../core/utils/settings_utils.dart';
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
@@ -260,6 +261,11 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       appBar: AppBar(
         title: const Text('Doctor Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Connection Settings',
+            onPressed: () => SettingsUtils.showSettingsDialog(context, ref),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

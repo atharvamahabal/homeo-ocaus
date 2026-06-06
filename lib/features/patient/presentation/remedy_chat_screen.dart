@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import '../../../core/utils/settings_utils.dart';
 import '../../../core/services/settings_provider.dart';
 
 class RemedyChatScreen extends ConsumerStatefulWidget {
@@ -101,53 +102,6 @@ class _RemedyChatScreenState extends ConsumerState<RemedyChatScreen> {
     }
   }
 
-  void _showSettingsDialog() {
-    final currentIp = ref.read(settingsProvider).backendIp;
-    final controller = TextEditingController(text: currentIp);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Connection Settings'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter your PC\'s IPv4 address to connect to the AI server.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'Backend IP Address',
-                hintText: 'e.g. 192.168.1.5',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newIp = controller.text.trim();
-              if (newIp.isNotEmpty) {
-                ref.read(settingsProvider.notifier).updateIp(newIp);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('IP updated to $newIp')),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final backendIp = ref.watch(settingsProvider).backendIp;
@@ -161,7 +115,7 @@ class _RemedyChatScreenState extends ConsumerState<RemedyChatScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Connection Settings',
-            onPressed: _showSettingsDialog,
+            onPressed: () => SettingsUtils.showSettingsDialog(context, ref),
           ),
           IconButton(
             icon: Icon(_isRepertoryMode ? Icons.chat : Icons.menu_book),

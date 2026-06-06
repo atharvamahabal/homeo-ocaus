@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard | Homeo-Ocaus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { display: block; background: #f8f9fa; }
+        .nav-bar { background: var(--primary-color); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .dashboard-content { padding: 20px; max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn-chat { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        .section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color); display: flex; justify-content: space-between; align-items: center; }
+        .appointment-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; }
+        .status { padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-pending { background: #FFF9C4; color: #FBC02D; }
+        .status-approved { background: #C8E6C9; color: #388E3C; }
+        .status-rejected { background: #FFCDD2; color: #D32F2F; }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <div style="font-weight: bold; font-size: 20px;">🌿 Homeo-Ocaus</div>
+        <button onclick="auth.signOut()" style="width: auto; padding: 5px 15px; background: rgba(255,255,255,0.2);">Logout</button>
+    </div>
+
+    <div class="dashboard-content">
+        <h2 id="welcome-msg">Welcome, Patient</h2>
+        
+        <div class="card">
+            <div class="section-title">
+                <span>AI Remedy Assistant</span>
+            </div>
+            <p style="color: #666; font-size: 14px;">Consult our AI chatbot for homeopathic remedies based on your symptoms.</p>
+            <button class="btn-chat" onclick="window.location.href='chatbot.html'">
+                <span>💬</span> Start AI Chat
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <span>Your Appointments</span>
+                <button id="btn-open-booking" style="width: auto; padding: 5px 10px; font-size: 12px;">+ Book New</button>
+            </div>
+            <div id="appointment-list">
+                <p style="color: #999; text-align: center;">Loading appointments...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100;">
+        <div class="card" style="width: 90%; max-width: 400px; margin: 0;">
+            <h3 style="color: var(--primary-color);">Book Appointment</h3>
+            <div class="input-group">
+                <label>Select Doctor</label>
+                <select id="doctor-select" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                    <!-- Will be populated -->
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Date</label>
+                <input type="date" id="booking-date">
+            </div>
+            <div class="input-group">
+                <label>Time</label>
+                <input type="time" id="booking-time">
+            </div>
+            <button id="btn-confirm-booking">Confirm Booking</button>
+            <button id="btn-close-booking" style="background: #ccc; margin-top: 5px;">Cancel</button>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script>
+        let currentUser = null;
+
+        auth.onAuthStateChanged(user => {
+            if (!user) window.location.href = 'index.html';
+            else {
+                currentUser = user;
+                loadProfile(user.uid);
+                loadAppointments(user.uid);
+                loadDoctors();
+            }
+        });
+
+        // Booking Modal Logic
+        const modal = document.getElementById('booking-modal');
+        document.getElementById('btn-open-booking').onclick = () => modal.classList.remove('hidden');
+        document.getElementById('btn-close-booking').onclick = () => modal.classList.add('hidden');
+
+        async function loadDoctors() {
+            const snapshot = await db.collection('users').where('role', '==', 'doctor').get();
+            const select = document.getElementById('doctor-select');
+            select.innerHTML = snapshot.docs.map(doc => `<option value="${doc.id}">${doc.data().name}</option>`).join('');
+        }
+
+        document.getElementById('btn-confirm-booking').onclick = async () => {
+            const doctorId = document.getElementById('doctor-select').value;
+            const doctorName = document.getElementById('doctor-select').options[document.getElementById('doctor-select').selectedIndex].text;
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+
+            if (!date || !time) return alert("Please select date and time");
+
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                await db.collection('appointments').add({
+                    patientId: currentUser.uid,
+                    patientName: userDoc.data().name,
+                    doctorId: doctorId,
+                    doctorName: doctorName,
+                    date: date,
+                    time: time,
+                    status: 'pending',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Appointment requested!");
+                modal.classList.add('hidden');
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        };
+
+        async function loadProfile(uid) {
+            const doc = await db.collection('users').doc(uid).get();
+            if (doc.exists) {
+                document.getElementById('welcome-msg').innerText = `Welcome, ${doc.data().name}`;
+            }
+        }
+
+        function loadAppointments(uid) {
+            db.collection('appointments')
+              .where('patientId', '==', uid)
+              .orderBy('date', 'desc')
+              .onSnapshot(snapshot => {
+                const list = document.getElementById('appointment-list');
+                if (snapshot.empty) {
+                    list.innerHTML = '<p style="color: #999; text-align: center;">No appointments yet.</p>';
+                    return;
+                }
+                list.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'appointment-item';
+                    item.innerHTML = `
+                        <div>
+                            <div style="font-weight: bold;">${data.doctorName || 'Doctor'}</div>
+                            <div style="font-size: 12px; color: #666;">${data.date} at ${data.time}</div>
+                        </div>
+                        <div class="status status-${data.status}">${data.status}</div>
+                    `;
+                    list.appendChild(item);
+                });
+              });
+        }
+    </script>
+</body>
+</html>

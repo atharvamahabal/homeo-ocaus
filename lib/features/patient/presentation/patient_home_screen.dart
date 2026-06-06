@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/settings_utils.dart';
 import '../../auth/data/auth_repository.dart';
 import '../data/patient_repository.dart';
 import '../domain/health_record.dart';
@@ -18,6 +19,11 @@ class PatientHomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Homeo ओकस'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Connection Settings',
+            onPressed: () => SettingsUtils.showSettingsDialog(context, ref),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

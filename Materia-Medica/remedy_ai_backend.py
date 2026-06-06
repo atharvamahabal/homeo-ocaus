@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import os
@@ -25,6 +26,15 @@ def get_local_ip():
 load_dotenv()
 
 app = FastAPI()
+
+# Enable CORS for Flutter Web
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with your actual web domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -233,7 +243,7 @@ if __name__ == "__main__":
     print("="*50)
     
     local_ip = get_local_ip()
-    print(f"\n📡 NETWORK INFO:")
+    print(f"\nNETWORK INFO:")
     print(f"   PC Local IP: {local_ip}")
     print(f"   In Flutter App Settings, enter: {local_ip}")
     print(f"   Status: Running on Port 8000")

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homeo-Ocaus | Clinic Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <div class="container" id="auth-container">
+        <div class="logo-area">
+            <div class="logo-icon">🌿</div>
+            <h1 id="auth-title">Homeo-Ocaus</h1>
+            <p id="auth-subtitle">Welcome to your clinic</p>
+        </div>
+
+        <div id="login-form">
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            <button id="btn-login">LOGIN</button>
+            <div style="margin: 15px 0; color: #999;">OR</div>
+            <button id="btn-google" class="google-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+                Sign in with Google
+            </button>
+            <p class="switch-auth">Don't have an account? <a href="#" id="link-signup">Sign Up</a></p>
+        </div>
+
+        <div id="signup-form" class="hidden">
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="signup-name" placeholder="Enter your full name">
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="signup-email" placeholder="Enter your email">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="signup-password" placeholder="Create a password">
+            </div>
+            <div class="input-group">
+                <label>Role</label>
+                <select id="signup-role" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                    <option value="patient">Patient</option>
+                    <option value="doctor">Doctor</option>
+                </select>
+            </div>
+            <button id="btn-register">REGISTER</button>
+            <p class="switch-auth">Already have an account? <a href="#" id="link-login">Login</a></p>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
